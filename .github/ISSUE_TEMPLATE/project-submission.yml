@@ -1,0 +1,94 @@
+name: Open Source Project Submission
+description: Submit an open source project for review by the Agentics Foundation Open Source Committee
+title: "[Project Submission] "
+labels: ["status:pending-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Agentics Foundation — Open Source Project Submission
+
+        Only registered members of the Agentics Foundation may submit projects.
+        Submissions from non-members will not be reviewed.
+
+        Please complete all required fields below.
+
+  - type: input
+    id: full-name
+    attributes:
+      label: Full Name
+      placeholder: Jane Doe
+    validations:
+      required: true
+
+  - type: input
+    id: email
+    attributes:
+      label: Email Address
+      placeholder: jane@example.com
+    validations:
+      required: true
+
+  - type: input
+    id: linkedin
+    attributes:
+      label: LinkedIn Profile URL
+      placeholder: https://linkedin.com/in/janedoe
+    validations:
+      required: true
+
+  - type: input
+    id: github-profile
+    attributes:
+      label: GitHub Profile URL
+      placeholder: https://github.com/janedoe
+    validations:
+      required: true
+
+  - type: input
+    id: repo-url
+    attributes:
+      label: Repository URL
+      description: Must be a public repository with a declared license.
+      placeholder: https://github.com/janedoe/my-project
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Submission Category
+      options:
+        - Project Donation
+        - Website Listing
+        - Co-Founder Search
+        - Problem Support
+        - Contributor Engagement
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Project Description & Request
+      description: Describe the project and your specific request (max 500 characters).
+      placeholder: |
+        Brief description of what the project does and what you're asking the Foundation to help with.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: acknowledgments
+    attributes:
+      label: Acknowledgments
+      options:
+        - label: I am a registered member of the Agentics Foundation in good standing
+          required: true
+        - label: The repository is public and has a clearly stated open source license
+          required: true
+        - label: The project is aligned with the Foundation's mission, values, and code of conduct
+          required: true
+        - label: There are no known IP infringements associated with this project
+          required: true
+        - label: I understand that submission does not guarantee approval
+          required: true

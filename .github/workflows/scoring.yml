@@ -1,0 +1,100 @@
+name: Scoring
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+
+jobs:
+  parse-score:
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.comment.body, '/score ')
+    steps:
+      - name: Parse and post score
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const comment = context.payload.comment.body.trim();
+            const reviewer = context.payload.comment.user.login;
+
+            // Parse /score mission:4 quality:3 clarity:5 impact:4 risk:3
+            const criteria = ['mission', 'quality', 'clarity', 'impact', 'risk'];
+            const scores = {};
+            let valid = true;
+
+            for (const c of criteria) {
+              const match = comment.match(new RegExp(`${c}:\\s*(\\d)`));
+              if (match) {
+                const val = parseInt(match[1]);
+                if (val < 0 || val > 5) { valid = false; break; }
+                scores[c] = val;
+              } else {
+                valid = false;
+                break;
+              }
+            }
+
+            if (!valid) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: [
+                  `@${reviewer} — Could not parse your score. Please use the format:`,
+                  '```',
+                  '/score mission:4 quality:3 clarity:5 impact:4 risk:3',
+                  '```',
+                  'Each score must be 0–5.'
+                ].join('\n')
+              });
+              return;
+            }
+
+            const total = Object.values(scores).reduce((a, b) => a + b, 0);
+
+            let interpretation;
+            if (total >= 21) interpretation = 'Strong candidate for approval or escalation';
+            else if (total >= 16) interpretation = 'Approve or approve with conditions';
+            else if (total >= 11) interpretation = 'Defer or request clarification';
+            else interpretation = 'Decline';
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                `### Score from @${reviewer}`,
+                '',
+                '| Criterion | Score |',
+                '|-----------|-------|',
+                `| Mission & Values Alignment | ${scores.mission}/5 |`,
+                `| Project Quality & Maturity | ${scores.quality}/5 |`,
+                `| Clarity of Request | ${scores.clarity}/5 |`,
+                `| Community Impact | ${scores.impact}/5 |`,
+                `| Risk & Governance (inverse) | ${scores.risk}/5 |`,
+                `| **Total** | **${total}/25** |`,
+                '',
+                `**Interpretation:** ${interpretation}`,
+                '',
+                '---',
+                '*Parsed automatically. See [scoring rubric](../blob/main/docs/scoring-template.md) for criteria details.*'
+              ].join('\n')
+            });
+
+            // Apply scoring label if not already present
+            const labels = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            if (!labels.data.some(l => l.name === 'status:scoring')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['status:scoring']
+              });
+            }

@@ -1,0 +1,74 @@
+name: On Submission
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'status:pending-review')
+    steps:
+      - name: Extract category and apply label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.issue.body || '';
+
+            // Extract category from the issue form
+            const categoryMap = {
+              'Project Donation': 'category:donation',
+              'Website Listing': 'category:website-listing',
+              'Co-Founder Search': 'category:cofounder',
+              'Problem Support': 'category:support',
+              'Contributor Engagement': 'category:contributors'
+            };
+
+            let categoryLabel = null;
+            for (const [text, label] of Object.entries(categoryMap)) {
+              if (body.includes(text)) {
+                categoryLabel = label;
+                break;
+              }
+            }
+
+            // Apply category label
+            if (categoryLabel) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: [categoryLabel]
+              });
+            }
+
+            // Extract submitter name
+            const nameMatch = body.match(/### Full Name\s*\n\s*(.+)/);
+            const name = nameMatch ? nameMatch[1].trim() : 'there';
+
+            // Post welcome comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                `Thank you for your submission, ${name}!`,
+                '',
+                'Your project has been received and is now **pending review** by the Open Source Committee.',
+                '',
+                '### What happens next',
+                '',
+                '1. Committee members will review your submission and score it using the [scoring rubric](../blob/main/docs/scoring-template.md)',
+                '2. The committee will vote on whether to escalate to senior leadership',
+                '3. If not escalated, a validation vote will determine approval, deferral, or decline',
+                '4. You will be notified of the outcome',
+                '',
+                'If you need to update your submission, please edit the issue description above.',
+                '',
+                '---',
+                '*This is an automated message from the Agentics Foundation Open Source Committee intake system.*'
+              ].join('\n')
+            });

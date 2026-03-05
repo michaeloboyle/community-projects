@@ -1,0 +1,143 @@
+name: Validation Vote
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+
+jobs:
+  tally-validation:
+    runs-on: ubuntu-latest
+    if: |
+      startsWith(github.event.comment.body, '/vote approve') ||
+      startsWith(github.event.comment.body, '/vote decline') ||
+      startsWith(github.event.comment.body, '/vote defer')
+    steps:
+      - name: Tally validation votes
+        uses: actions/github-script@v7
+        env:
+          QUORUM: '3'
+        with:
+          script: |
+            const quorum = parseInt(process.env.QUORUM);
+
+            // Fetch all comments
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            // Tally votes (one per unique user, last vote wins)
+            const votes = {};
+            for (const c of comments) {
+              const body = c.body.trim();
+              if (/^\/vote approve\s*$/.test(body)) votes[c.user.login] = 'approve';
+              if (/^\/vote decline\s*$/.test(body)) votes[c.user.login] = 'decline';
+              if (/^\/vote defer\s*$/.test(body)) votes[c.user.login] = 'defer';
+            }
+
+            const approve = Object.values(votes).filter(v => v === 'approve').length;
+            const decline = Object.values(votes).filter(v => v === 'decline').length;
+            const defer = Object.values(votes).filter(v => v === 'defer').length;
+            const totalVotes = approve + decline + defer;
+
+            // Ensure validation-vote label is applied
+            const labels = (await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            })).data.map(l => l.name);
+
+            if (!labels.includes('status:validation-vote')) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['status:validation-vote']
+              });
+            }
+
+            if (totalVotes < quorum) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `**Validation Vote Tally** — ${totalVotes}/${quorum} votes cast (quorum not yet reached)\n\n| | Count |\n|---|---|\n| Approve | ${approve} |\n| Decline | ${decline} |\n| Defer | ${defer} |`
+              });
+              return;
+            }
+
+            // Determine winner (highest count wins, ties favor approve > defer > decline)
+            let outcome, outcomeLabel;
+            if (approve >= decline && approve >= defer) {
+              outcome = 'APPROVED';
+              outcomeLabel = 'status:approved';
+            } else if (defer >= approve && defer >= decline) {
+              outcome = 'DEFERRED';
+              outcomeLabel = 'status:deferred';
+            } else {
+              outcome = 'DECLINED';
+              outcomeLabel = 'status:declined';
+            }
+
+            // Remove old status labels, apply outcome
+            const statusLabels = labels.filter(l => l.startsWith('status:'));
+            for (const sl of statusLabels) {
+              try {
+                await github.rest.issues.removeLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  name: sl
+                });
+              } catch (e) { /* ok */ }
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: [outcomeLabel]
+            });
+
+            const emoji = { APPROVED: '✅', DECLINED: '❌', DEFERRED: '⏸️' };
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                `### Validation Vote — Result: ${emoji[outcome]} ${outcome}`,
+                '',
+                `| | Count |`,
+                `|---|---|`,
+                `| Approve | ${approve} |`,
+                `| Decline | ${decline} |`,
+                `| Defer | ${defer} |`,
+                '',
+                `Quorum: ${quorum} | Total votes: ${totalVotes}`,
+                '',
+                outcome === 'APPROVED'
+                  ? 'This project has been **approved** by the Open Source Committee. The submitter will be contacted with next steps.'
+                  : outcome === 'DEFERRED'
+                  ? 'This submission has been **deferred**. The submitter should provide additional information or clarification.'
+                  : 'This submission has been **declined** by the Open Source Committee.',
+                '',
+                '---',
+                '*Automated validation vote result.*'
+              ].join('\n')
+            });
+
+            // Close issue if declined
+            if (outcome === 'DECLINED') {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                state: 'closed',
+                state_reason: 'not_planned'
+              });
+            }

@@ -1,0 +1,125 @@
+name: Approve Project
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  register-project:
+    runs-on: ubuntu-latest
+    if: github.event.label.name == 'status:approved'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract project data and update registry
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = context.payload.issue.body || '';
+            const issueNumber = context.payload.issue.number;
+
+            // Parse fields from issue form
+            function extract(label) {
+              const re = new RegExp(`### ${label}\\s*\\n\\s*(.+)`, 'i');
+              const m = body.match(re);
+              return m ? m[1].trim() : '';
+            }
+
+            const name = extract('Full Name');
+            const repoUrl = extract('Repository URL');
+            const description = body.match(/### Project Description & Request\s*\n\s*([\s\S]*?)(?=\n###|\n---|\Z)/i);
+            const descText = description ? description[1].trim().split('\n')[0] : '';
+
+            // Extract category
+            const categoryMap = {
+              'Project Donation': 'donation',
+              'Website Listing': 'website-listing',
+              'Co-Founder Search': 'cofounder',
+              'Problem Support': 'support',
+              'Contributor Engagement': 'contributors'
+            };
+            let category = 'unknown';
+            for (const [text, slug] of Object.entries(categoryMap)) {
+              if (body.includes(text)) { category = slug; break; }
+            }
+
+            // Calculate total score from score comments
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
+
+            let totalScore = 0;
+            let scoreCount = 0;
+            for (const c of comments) {
+              const match = c.body.match(/\*\*Total\*\*\s*\|\s*\*\*(\d+)\/25\*\*/);
+              if (match) {
+                totalScore += parseInt(match[1]);
+                scoreCount++;
+              }
+            }
+            const avgScore = scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0;
+
+            // Read current registry
+            const registryPath = 'data/approved-projects.json';
+            const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+
+            // Generate ID
+            const nextNum = registry.length + 1;
+            const id = `proj-${String(nextNum).padStart(3, '0')}`;
+
+            // Add entry
+            registry.push({
+              id,
+              name: descText.substring(0, 80) || `Submission #${issueNumber}`,
+              repo_url: repoUrl,
+              category,
+              approved_date: new Date().toISOString().split('T')[0],
+              submitter: context.payload.issue.user.login,
+              description: descText.substring(0, 500),
+              total_score: avgScore,
+              issue_number: issueNumber,
+              status: 'active'
+            });
+
+            fs.writeFileSync(registryPath, JSON.stringify(registry, null, 2) + '\n');
+
+            // Set output for commit step
+            const core = require('@actions/core');
+            core.exportVariable('PROJECT_ID', id);
+            core.exportVariable('ISSUE_NUMBER', issueNumber);
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/approved-projects.json
+          git commit -m "Add approved project ${PROJECT_ID} from issue #${ISSUE_NUMBER}"
+          git push
+
+      - name: Post confirmation
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                '### Project Registered',
+                '',
+                `This project has been added to the [approved projects registry](../blob/main/data/approved-projects.json) as \`${process.env.PROJECT_ID}\`.`,
+                '',
+                'The submitter will be contacted with next steps.',
+                '',
+                '---',
+                '*Automated registration.*'
+              ].join('\n')
+            });

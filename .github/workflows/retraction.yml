@@ -61,7 +61,9 @@ jobs:
 
   tally-retraction:
     runs-on: ubuntu-latest
-    if: github.event.comment.body == '/vote retract'
+    if: |
+      github.event.comment.body == '/vote retract' ||
+      github.event.comment.body == '/vote no-retract'
     concurrency:
       group: retraction-${{ github.event.issue.number }}
       cancel-in-progress: true
@@ -98,15 +100,25 @@ jobs:
               issue_number: context.issue.number
             });
 
-            // Count unique retraction votes
-            const voters = new Set();
+            // Count unique retraction and no-retract votes
+            const retractVoters = new Set();
+            const keepVoters = new Set();
             for (const c of comments) {
-              if (c.body.trim() === '/vote retract') {
-                voters.add(c.user.login);
+              if (c.user.type === 'Bot') continue;
+              const body = c.body.trim();
+              if (body === '/vote retract') {
+                retractVoters.add(c.user.login);
+                keepVoters.delete(c.user.login);
+              }
+              if (body === '/vote no-retract') {
+                keepVoters.add(c.user.login);
+                retractVoters.delete(c.user.login);
               }
             }
 
-            const voteCount = voters.size;
+            const retractCount = retractVoters.size;
+            const keepCount = keepVoters.size;
+            const totalVotes = retractCount + keepCount;
 
             // SEC-008: Rate limit - skip if bot posted a tally within last 5 minutes
             const recentBotTally = comments.find(c =>
@@ -114,16 +126,16 @@ jobs:
               (c.body.includes('Vote Tally') || c.body.includes('Vote —')) &&
               (Date.now() - new Date(c.created_at).getTime()) < 300000
             );
-            if (recentBotTally && voteCount < quorum) {
+            if (recentBotTally && totalVotes < quorum) {
               return; // Skip posting duplicate tally
             }
 
-            if (voteCount < quorum) {
+            if (totalVotes < quorum) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: `**Retraction Vote Tally** — ${voteCount}/${quorum} votes (quorum not yet reached)`
+                body: `**Retraction Vote Tally** -- ${totalVotes}/${quorum} votes (quorum not yet reached)\n\n| | Count |\n|---|---|\n| Retract | ${retractCount} |\n| Keep | ${keepCount} |`
               });
               return;
             }

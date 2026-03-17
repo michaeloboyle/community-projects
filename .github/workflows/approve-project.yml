@@ -28,6 +28,14 @@ jobs:
             const body = context.payload.issue.body || '';
             const issueNumber = context.payload.issue.number;
 
+            // SEC-007: Sanitize user input before embedding in registry
+            function sanitize(input, maxLen = 500) {
+              return input
+                .replace(/[[\](){}|`*_~#>!\\]/g, '')
+                .substring(0, maxLen)
+                .trim();
+            }
+
             // Parse fields from issue form
             function extract(label) {
               const re = new RegExp(`### ${label}\\s*\\n\\s*(.+)`, 'i');
@@ -39,6 +47,12 @@ jobs:
             const repoUrl = extract('Repository URL');
             const description = body.match(/### Project Description & Request\s*\n\s*([\s\S]*?)(?=\n###|\n---|\Z)/i);
             const descText = description ? description[1].trim().split('\n')[0] : '';
+
+            // SEC-007: Validate repo URL format
+            const repoUrlPattern = /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/;
+            if (repoUrl && !repoUrlPattern.test(repoUrl)) {
+              core.warning(`Invalid repo URL format: ${repoUrl}`);
+            }
 
             // Extract category
             const categoryMap = {
@@ -71,9 +85,18 @@ jobs:
             }
             const avgScore = scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0;
 
-            // Read current registry
+            // SEC-009: Validate registry schema
             const registryPath = 'data/approved-projects.json';
-            const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+            let registry;
+            try {
+              registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+              if (!Array.isArray(registry)) {
+                throw new Error('Registry must be an array');
+              }
+            } catch (e) {
+              core.setFailed(`Registry validation failed: ${e.message}`);
+              return;
+            }
 
             // Generate ID from issue number (avoids race condition with registry.length)
             const id = `proj-${String(issueNumber).padStart(3, '0')}`;
@@ -81,12 +104,12 @@ jobs:
             // Add entry
             registry.push({
               id,
-              name: descText.substring(0, 80) || `Submission #${issueNumber}`,
+              name: sanitize(descText, 80) || `Submission #${issueNumber}`,
               repo_url: repoUrl,
               category,
               approved_date: new Date().toISOString().split('T')[0],
               submitter: context.payload.issue.user.login,
-              description: descText.substring(0, 500),
+              description: sanitize(descText, 500),
               total_score: avgScore,
               issue_number: issueNumber,
               status: 'active'

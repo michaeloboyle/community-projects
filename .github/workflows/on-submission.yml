@@ -13,10 +13,18 @@ jobs:
     if: contains(github.event.issue.labels.*.name, 'status:pending-review')
     steps:
       - name: Extract category and apply label
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7.1.0
         with:
           script: |
             const body = context.payload.issue.body || '';
+
+            // SEC-007: Sanitize user input before embedding in comments
+            function sanitize(input, maxLen = 100) {
+              return input
+                .replace(/[[\](){}|`*_~#>!\\]/g, '')
+                .substring(0, maxLen)
+                .trim();
+            }
 
             // Extract category from the issue form
             const categoryMap = {
@@ -47,7 +55,7 @@ jobs:
 
             // Extract submitter name
             const nameMatch = body.match(/### Full Name\s*\n\s*(.+)/);
-            const name = nameMatch ? nameMatch[1].trim() : 'there';
+            const name = sanitize(nameMatch ? nameMatch[1].trim() : 'there');
 
             // Post welcome comment
             await github.rest.issues.createComment({

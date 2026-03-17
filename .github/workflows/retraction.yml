@@ -11,6 +11,9 @@ permissions:
 jobs:
   propose-retraction:
     runs-on: ubuntu-latest
+    concurrency:
+      group: retraction-${{ github.event.issue.number }}
+      cancel-in-progress: true
     if: github.event.comment.body == '/retract'
     steps:
       - name: Post retraction proposal
@@ -59,6 +62,9 @@ jobs:
   tally-retraction:
     runs-on: ubuntu-latest
     if: github.event.comment.body == '/vote retract'
+    concurrency:
+      group: retraction-${{ github.event.issue.number }}
+      cancel-in-progress: true
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
@@ -102,6 +108,16 @@ jobs:
 
             const voteCount = voters.size;
 
+            // SEC-008: Rate limit - skip if bot posted a tally within last 5 minutes
+            const recentBotTally = comments.find(c =>
+              c.user.login === 'github-actions[bot]' &&
+              (c.body.includes('Vote Tally') || c.body.includes('Vote —')) &&
+              (Date.now() - new Date(c.created_at).getTime()) < 300000
+            );
+            if (recentBotTally && voteCount < quorum) {
+              return; // Skip posting duplicate tally
+            }
+
             if (voteCount < quorum) {
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -113,9 +129,19 @@ jobs:
             }
 
             // Quorum reached — retract
-            // Update registry
+            // SEC-009: Validate registry schema
             const registryPath = 'data/approved-projects.json';
-            const registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+            let registry;
+            try {
+              registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+              if (!Array.isArray(registry)) {
+                throw new Error('Registry must be an array');
+              }
+            } catch (e) {
+              const core = require('@actions/core');
+              core.setFailed(`Registry validation failed: ${e.message}`);
+              return;
+            }
             const issueNumber = context.issue.number;
 
             const idx = registry.findIndex(p => p.issue_number === issueNumber);
@@ -190,5 +216,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/approved-projects.json
-          git commit -m "Retract project from issue #${ISSUE_NUMBER}"
+          git commit -m "Retract project from issue #${ISSUE_NUMBER}" || exit 0
+          git pull --rebase origin main
           git push

@@ -10,12 +10,15 @@ permissions:
 jobs:
   tally-escalation:
     runs-on: ubuntu-latest
+    concurrency:
+      group: escalation-${{ github.event.issue.number }}
+      cancel-in-progress: true
     if: |
       startsWith(github.event.comment.body, '/vote escalate') ||
       startsWith(github.event.comment.body, '/vote no-escalate')
     steps:
       - name: Tally escalation votes
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7.1.0
         env:
           QUORUM: '3'
         with:
@@ -60,6 +63,16 @@ jobs:
             const escalate = Object.values(votes).filter(v => v === 'escalate').length;
             const noEscalate = Object.values(votes).filter(v => v === 'no-escalate').length;
             const totalVotes = escalate + noEscalate;
+
+            // SEC-008: Rate limit - skip if bot posted a tally within last 5 minutes
+            const recentBotTally = comments.find(c =>
+              c.user.login === 'github-actions[bot]' &&
+              (c.body.includes('Vote Tally') || c.body.includes('Vote —')) &&
+              (Date.now() - new Date(c.created_at).getTime()) < 300000
+            );
+            if (recentBotTally && totalVotes < quorum) {
+              return; // Skip posting duplicate tally
+            }
 
             // Apply label to track voting phase
             const labels = (await github.rest.issues.listLabelsOnIssue({

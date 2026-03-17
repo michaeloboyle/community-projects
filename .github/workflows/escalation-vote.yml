@@ -45,15 +45,22 @@ jobs:
               issue_number: context.issue.number
             });
 
+            // SEC-012: Exclude issue author from voting
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            const submitter = issue.data.user.login;
+
             // Tally votes (one per unique user, last vote wins)
             const votes = {};
             for (const c of comments) {
+              if (c.user.type === 'Bot') continue;
+              if (c.user.login === submitter) continue;
               const body = c.body.trim();
-              if (body.startsWith('/vote escalate') && !body.startsWith('/vote escalate ') === false) {
-                // Match exactly "/vote escalate" (not "/vote escalate-something")
-                if (/^\/vote escalate\s*$/.test(body)) {
-                  votes[c.user.login] = 'escalate';
-                }
+              if (/^\/vote escalate\s*$/.test(body)) {
+                votes[c.user.login] = 'escalate';
               }
               if (/^\/vote no-escalate\s*$/.test(body)) {
                 votes[c.user.login] = 'no-escalate';

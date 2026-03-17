@@ -7,7 +7,15 @@ set -euo pipefail
 
 REPO="${1:-agenticsorg/community-projects}"
 
-echo "Setting up labels for $REPO..."
+# SEC-014: Validate repo format
+if [[ ! "$REPO" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
+  echo "Error: Invalid repo format. Expected owner/repo" >&2
+  exit 1
+fi
+
+echo "Setting up labels for ${REPO}..."
+echo "This will create or overwrite labels. Press Ctrl+C within 3 seconds to cancel."
+sleep 3
 
 # Status labels
 gh label create "status:pending-review" --color "FBCA04" --description "Awaiting committee review" --repo "$REPO" --force

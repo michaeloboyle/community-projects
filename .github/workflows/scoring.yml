@@ -16,6 +16,19 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            // SEC-003: Verify commenter is an org member/collaborator
+            const validAssociations = ['MEMBER', 'OWNER', 'COLLABORATOR'];
+            const association = context.payload.comment.author_association;
+            if (!validAssociations.includes(association)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `@${context.payload.comment.user.login} Only organization members, owners, or collaborators can perform this action.`
+              });
+              return;
+            }
+
             const comment = context.payload.comment.body.trim();
             const reviewer = context.payload.comment.user.login;
 

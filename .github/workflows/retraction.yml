@@ -12,8 +12,8 @@ jobs:
   propose-retraction:
     runs-on: ubuntu-latest
     concurrency:
-      group: retraction-${{ github.event.issue.number }}
-      cancel-in-progress: true
+      group: registry-update
+      cancel-in-progress: false
     if: github.event.comment.body == '/retract'
     steps:
       - name: Post retraction proposal
@@ -51,8 +51,8 @@ jobs:
                 '- Legal, ethical, or reputational risk',
                 '- Loss of membership standing',
                 '',
-                'Committee members: vote with `/vote retract` to support retraction.',
-                'A simple majority (50% + 1) is required.',
+                'Committee members: vote with `/vote retract` to support retraction or `/vote no-retract` to keep.',
+                'A simple majority is required.',
                 '',
                 '---',
                 '*Automated retraction proposal.*'
@@ -65,8 +65,8 @@ jobs:
       github.event.comment.body == '/vote retract' ||
       github.event.comment.body == '/vote no-retract'
     concurrency:
-      group: retraction-${{ github.event.issue.number }}
-      cancel-in-progress: true
+      group: registry-update
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
@@ -140,85 +140,104 @@ jobs:
               return;
             }
 
-            // Quorum reached — retract
-            // SEC-009: Validate registry schema
-            const registryPath = 'data/approved-projects.json';
-            let registry;
-            try {
-              registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
-              if (!Array.isArray(registry)) {
-                throw new Error('Registry must be an array');
-              }
-            } catch (e) {
-              const core = require('@actions/core');
-              core.setFailed(`Registry validation failed: ${e.message}`);
-              return;
-            }
+            // Quorum reached — determine outcome
             const issueNumber = context.issue.number;
 
-            const idx = registry.findIndex(p => p.issue_number === issueNumber);
-            if (idx !== -1) {
-              registry[idx].status = 'retracted';
-              registry[idx].retracted_date = new Date().toISOString().split('T')[0];
-              fs.writeFileSync(registryPath, JSON.stringify(registry, null, 2) + '\n');
-
-              core.setOutput('updated_registry', 'true');
-              core.setOutput('issue_number', String(issueNumber));
-            }
-
-            // Update labels
-            const labels = (await github.rest.issues.listLabelsOnIssue({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber
-            })).data.map(l => l.name);
-
-            for (const sl of labels.filter(l => l.startsWith('status:'))) {
+            if (retractCount > keepCount) {
+              // SEC-009: Validate registry schema
+              const registryPath = 'data/approved-projects.json';
+              let registry;
               try {
-                await github.rest.issues.removeLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: issueNumber,
-                  name: sl
-                });
-              } catch (e) { /* ok */ }
+                registry = JSON.parse(fs.readFileSync(registryPath, 'utf8'));
+                if (!Array.isArray(registry)) {
+                  throw new Error('Registry must be an array');
+                }
+              } catch (e) {
+                const core = require('@actions/core');
+                core.setFailed(`Registry validation failed: ${e.message}`);
+                return;
+              }
+
+              const idx = registry.findIndex(p => p.issue_number === issueNumber);
+              if (idx !== -1) {
+                registry[idx].status = 'retracted';
+                registry[idx].retracted_date = new Date().toISOString().split('T')[0];
+                fs.writeFileSync(registryPath, JSON.stringify(registry, null, 2) + '\n');
+
+                core.setOutput('updated_registry', 'true');
+                core.setOutput('issue_number', String(issueNumber));
+              }
+
+              // Update labels
+              const labels = (await github.rest.issues.listLabelsOnIssue({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber
+              })).data.map(l => l.name);
+
+              for (const sl of labels.filter(l => l.startsWith('status:'))) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    name: sl
+                  });
+                } catch (e) { /* ok */ }
+              }
+
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                labels: ['status:retracted']
+              });
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: [
+                  '### Retraction Vote -- Result: RETRACTED',
+                  '',
+                  `Votes to retract: ${retractCount} | Votes to keep: ${keepCount} (quorum: ${quorum})`,
+                  '',
+                  'This project\'s approval has been **retracted**. It has been marked as retracted in the registry.',
+                  '',
+                  'Actions that may follow:',
+                  '- Removal from Foundation website',
+                  '- Withdrawal of support',
+                  '- Termination of active collaboration',
+                  '',
+                  '---',
+                  '*Automated retraction result.*'
+                ].join('\n')
+              });
+
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                state: 'closed',
+                state_reason: 'not_planned'
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: [
+                  '### Retraction Vote -- Result: RETAINED',
+                  '',
+                  `Votes to retract: ${retractCount} | Votes to keep: ${keepCount} (quorum: ${quorum})`,
+                  '',
+                  'This project\'s approval has been **retained** by the committee.',
+                  '',
+                  '---',
+                  '*Automated retraction vote result.*'
+                ].join('\n')
+              });
             }
-
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              labels: ['status:retracted']
-            });
-
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              body: [
-                '### Retraction Vote — Result: RETRACTED',
-                '',
-                `Votes to retract: ${voteCount} (quorum: ${quorum})`,
-                '',
-                'This project\'s approval has been **retracted**. It has been marked as retracted in the registry.',
-                '',
-                'Actions that may follow:',
-                '- Removal from Foundation website',
-                '- Withdrawal of support',
-                '- Termination of active collaboration',
-                '',
-                '---',
-                '*Automated retraction result.*'
-              ].join('\n')
-            });
-
-            await github.rest.issues.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-              state: 'closed',
-              state_reason: 'not_planned'
-            });
 
       - name: Commit registry update
         if: steps.tally.outputs.updated_registry == 'true'

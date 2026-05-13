@@ -1,18 +1,20 @@
 ---
 title: Open Source Project Intake: Rules and Processes
 author: Nick Ruest
+author_github: nicholas-ruest
 maintainer: Nick Ruest
+maintainer_github: nicholas-ruest
 status: draft (canonical version pending committee ratification)
 source: https://docs.google.com/document/d/1-WCg3ArxhllUpdyk1tJu3bHkQf92tdUm0u80GDM0Vj4/edit
 migrated_from_gdoc: 2026-05-13
 amendments_via: pull-request
 ---
 
-> **Source:** This document is a Markdown migration of [Nick Ruest's original Google Doc](https://docs.google.com/document/d/1-WCg3ArxhllUpdyk1tJu3bHkQf92tdUm0u80GDM0Vj4/edit), the seed material for PR #4 / PR #6's intake state machine. Migrated 2026-05-13 to enable version-controlled amendment via standard pull-request flow.
+> **Source:** This document is a Markdown migration of [Nick Ruest's (@nicholas-ruest) original Google Doc](https://docs.google.com/document/d/1-WCg3ArxhllUpdyk1tJu3bHkQf92tdUm0u80GDM0Vj4/edit), the seed material for PR #4 / PR #6's intake state machine. Migrated 2026-05-13 to enable version-controlled amendment via standard pull-request flow.
 >
-> **Author / maintainer:** Nick Ruest remains the named author and maintainer of this document.
+> **Author / maintainer:** @nicholas-ruest remains the named author and maintainer of this document.
 >
-> **Amending this document:** Open a pull request against this file. Amendments are accepted after OSS Committee review.
+> **Amending this document:** Open a pull request against this file and request review from @nicholas-ruest. Amendments are accepted after OSS Committee review.
 >
 > **Migration fidelity:** This is a first-pass migration preserving Nick's original prose. Markdown heading levels and formatting refinements will be addressed via follow-up PRs by the committee. The migration itself does not introduce normative changes.
 

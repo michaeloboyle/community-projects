@@ -52,3 +52,4 @@
 {"type":"attestation","submission_id":"issue-19","from_state":"status:approved","to_state":"command-processed","actor":"michaeloboyle","timestamp":"2026-04-18T20:46:02.873Z","gdoc_revision":"","payload":{"command":"/vote","raw":"/vote no-retract"}}
 {"type":"transition","submission_id":"issue-21","from_state":"new","to_state":"case-brief-generated","actor":"agent","timestamp":"2026-04-18T20:48:33.779Z","gdoc_revision":"","payload":{"coi_flags":0,"similar_count":3,"category":"donation"}}
 {"type":"transition","submission_id":"issue-22","from_state":"new","to_state":"case-brief-generated","actor":"agent","timestamp":"2026-04-18T20:49:55.164Z","gdoc_revision":"","payload":{"coi_flags":6,"similar_count":3,"category":"donation"}}
+{"type":"transition","submission_id":"issue-33","from_state":"new","to_state":"case-brief-generated","actor":"agent","timestamp":"2026-05-20T15:04:53.016Z","gdoc_revision":"","payload":{"coi_flags":0,"similar_count":3,"category":"donation"}}

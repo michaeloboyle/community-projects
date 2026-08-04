@@ -1,0 +1,279 @@
+{
+  "generated_at": "2026-07-13T00:00:00Z",
+  "provenance": "Curated seed from AF-Member-Intelligence (14 Zoom chat logs, Feb 19 - Apr 30 2026) + Gemini meeting notes (Apr 22 - Jul 1). For member-intel entries the introducer is association-inferred (the member the repo is associated with) pending verification against raw chat lines; source is 'member-intel'. Owners left null where unverified.",
+  "report": {
+    "parsed_sources": 0,
+    "not_yet_parsed": [
+      "2026-05-06 OSS Google Meet transcript",
+      "2026-05-13 OSS Google Meet transcript",
+      "2026-05-20 OSS Google Meet transcript",
+      "2026-05-27 OSS Google Meet transcript",
+      "2026-06-03 OSS Google Meet transcript",
+      "2026-06-10 OSS Google Meet transcript",
+      "2026-06-24 OSS Google Meet transcript",
+      "2026-07-01 OSS Google Meet transcript",
+      "2026-07-08 OSS Google Meet transcript (Gemini notes failed)"
+    ],
+    "total_repos": 18
+  },
+  "entries": [
+    {
+      "canonical": "agenticsorg/OIA-Model",
+      "name": "OIA-Model",
+      "owner": "agenticsorg",
+      "url": "https://github.com/agenticsorg/OIA-Model",
+      "introducer": "nicholas-ruest",
+      "first_seen": "2026-02-19",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": []
+    },
+    {
+      "canonical": "connectome-os",
+      "name": "Connectome-OS",
+      "owner": null,
+      "url": null,
+      "introducer": "ruvnet",
+      "first_seen": "2026-02-19",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": [
+        "owner-unverified"
+      ]
+    },
+    {
+      "canonical": "globalbusinessadvisors/Synapse-Graph",
+      "name": "Synapse-Graph",
+      "owner": "globalbusinessadvisors",
+      "url": "https://github.com/globalbusinessadvisors/Synapse-Graph",
+      "introducer": "nicholas-ruest",
+      "first_seen": "2026-02-19",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": []
+    },
+    {
+      "canonical": "open-claude-code",
+      "name": "open-claude-code",
+      "owner": null,
+      "url": null,
+      "introducer": "ruvnet",
+      "first_seen": "2026-02-19",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": [
+        "owner-unverified"
+      ]
+    },
+    {
+      "canonical": "ruview",
+      "name": "RuView",
+      "owner": null,
+      "url": null,
+      "introducer": "ruvnet",
+      "first_seen": "2026-02-19",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": [
+        "owner-unverified"
+      ]
+    },
+    {
+      "canonical": "ruvnet/RuVector",
+      "name": "RuVector",
+      "owner": "ruvnet",
+      "url": "https://github.com/ruvnet/RuVector",
+      "introducer": "ruvnet",
+      "first_seen": "2026-02-19",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": []
+    },
+    {
+      "canonical": "ruvnet/ruflo",
+      "name": "ruflo",
+      "owner": "ruvnet",
+      "url": "https://github.com/ruvnet/ruflo",
+      "introducer": "ruvnet",
+      "first_seen": "2026-02-19",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": []
+    },
+    {
+      "canonical": "county-title-search-agent",
+      "name": "County title-search agent",
+      "owner": null,
+      "url": null,
+      "introducer": "rcraw",
+      "first_seen": "2026-02-27",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": [
+        "owner-unverified"
+      ]
+    },
+    {
+      "canonical": "pi.ruv.io",
+      "name": "pi.ruv.io",
+      "owner": null,
+      "url": "https://pi.ruv.io",
+      "introducer": "Stuart Kerr",
+      "first_seen": "2026-03-13",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": [
+        "owner-unverified"
+      ]
+    },
+    {
+      "canonical": "CraftsMan-Labs/SimpleAgents",
+      "name": "SimpleAgents",
+      "owner": "CraftsMan-Labs",
+      "url": "https://github.com/CraftsMan-Labs/SimpleAgents",
+      "introducer": "CraftsMan-Labs",
+      "first_seen": "2026-04-09",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": []
+    },
+    {
+      "canonical": "simpleagenttools",
+      "name": "simpleAgentTools (PyPI)",
+      "owner": null,
+      "url": null,
+      "introducer": "CraftsMan-Labs",
+      "first_seen": "2026-04-09",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": [
+        "owner-unverified"
+      ]
+    },
+    {
+      "canonical": "simpleflow-sdk",
+      "name": "SimpleFlow SDK",
+      "owner": null,
+      "url": null,
+      "introducer": "CraftsMan-Labs",
+      "first_seen": "2026-04-09",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": [
+        "owner-unverified"
+      ]
+    },
+    {
+      "canonical": "weftos",
+      "name": "WeftOS",
+      "owner": null,
+      "url": null,
+      "introducer": "Stuart Kerr",
+      "first_seen": "2026-04-10",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": [
+        "owner-unverified"
+      ]
+    },
+    {
+      "canonical": "vectorvroom",
+      "name": "VectorVroom",
+      "owner": null,
+      "url": "https://vectorvroom.shaal.dev",
+      "introducer": "shaal",
+      "first_seen": "2026-04-24",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": [
+        "owner-unverified"
+      ]
+    },
+    {
+      "canonical": "proffesor-for-testing/agentic-qe",
+      "name": "agentic-qe",
+      "owner": "proffesor-for-testing",
+      "url": "https://github.com/proffesor-for-testing/agentic-qe",
+      "introducer": "Dragan Spiridonov",
+      "first_seen": "2026-04-30",
+      "mention_count": 1,
+      "sources": [
+        "member-intel"
+      ],
+      "flags": []
+    },
+    {
+      "canonical": "summarybot",
+      "name": "SummaryBot",
+      "owner": null,
+      "url": null,
+      "introducer": "mrjcleaver",
+      "first_seen": "2026-05-20",
+      "mention_count": 1,
+      "sources": [
+        "gemini-notes-2026-05-20 (Issue #33)"
+      ],
+      "flags": [
+        "owner-unverified"
+      ]
+    },
+    {
+      "canonical": "video-sync",
+      "name": "Video Sync tool",
+      "owner": null,
+      "url": null,
+      "introducer": "mrjcleaver",
+      "first_seen": "2026-06-10",
+      "mention_count": 1,
+      "sources": [
+        "gemini-notes-2026-06-10"
+      ],
+      "flags": [
+        "owner-unverified"
+      ]
+    },
+    {
+      "canonical": "manage.agentics.org",
+      "name": "manage.agentics.org",
+      "owner": null,
+      "url": "https://manage.agentics.org",
+      "introducer": "committee",
+      "first_seen": "2026-06-24",
+      "mention_count": 1,
+      "sources": [
+        "gemini-notes-2026-06-24 (OIA pilot target)"
+      ],
+      "flags": [
+        "owner-unverified"
+      ]
+    }
+  ]
+}

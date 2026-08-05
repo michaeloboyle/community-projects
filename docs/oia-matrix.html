@@ -132,6 +132,9 @@ const apps=[
  ["ohdearquant/lionagi","governed multi-agent orchestration",[0,0,0,0,0,1,0,2,1,1],[["auditability","aud"],["security","sec"]],
    {5:"multi-provider routing — API + subprocess providers (Claude Code, Codex, DeepSeek) in one orchestration graph",7:"governed multi-agent DAG flows, parallel fan-outs, Session coordination — the core",8:"durable run persistence (~/.lionagi/runs) with resume/reattach; typed, inspectable Branch state",9:"CLI-first (li agent / li o flow) + Lion Studio web dashboard"},
    "'You own the loop': governed orchestration with typed, inspectable state, per-tool permission policies, guard hooks and git-worktree sandboxing — hence the auditability + security spans. A mature framework (PyPI, 233+ releases, ~400 stars). Its durable-persistence + resume gives a genuine L8 continuity touch alongside the L7 centre. External submission (Ocean / Haiyang Li).","app"],
+ ["summarybotng/summarybot-ng","Discord conversation-summariser (Claude via OpenRouter)",[0,0,1,1,0,2,2,1,0,1],[["identity","idn"],["sovereignty","sov"]],
+   {2:"self-hostable (Docker/compose, fly/railway/render) - though default inference is hosted",3:"src/archive persistence: importers, retention, Google-Drive OAuth sync",5:"Claude via OpenRouter - the summarisation core",6:"conversation to structured knowledge; Confluence/Notion/Wiki export",7:"command_handlers + scheduler + webhook delivery",9:"Discord slash-commands + REST API"},
+   "A Discord bot that turns conversations into structured summaries and archives them. Sits L5-L6 (summarisation + knowledge capture) over an L3 archive substrate, with an L9 Discord/REST surface. Identity span is real (OAuth + API-key backends + Discord permissions). Self-describes as an agentically constructed rebuild: structure is genuine but early-stage (2 stars, many AI-generated status docs), and placements are structural, not runtime-verified.","app"],
  ["agenticsorg/community-projects","the committee's intake harness",[0,0,0,1,0,0,0,2,0,1],[["auditability","aud"]],
    {3:"approved-projects registry",7:"RFC-001 governance agent + intake state machine",9:"Pages committee dashboard"},
    "The committee's own harness — an instance of the metaharness pattern applied to governance, not an intelligence application. This is the thing that RUNS the funnel.","infra"],
@@ -149,6 +152,7 @@ const apps=[
    "Not an application at all — the organisation's profile README. Included for completeness; the OIA lens flags it as out of scope.","infra"],
 ];
 const EVID={
+ "summarybotng/summarybot-ng":{t:"code",n:"File tree inspected 2026-08-05: src/archive (importers/retention/oauth sync), src/command_handlers (summarize/schedule), REST API confirm the L3/L5/L6/L7/L9 + identity placements. NOT runtime-verified; security is documented (architecture/security-architecture.md) not audited; maturity modest."},
  "ruvnet/metaharness":{t:"code",n:"packages/ confirms it: darwin-mode (safe learning, L8), host-* adapters + harness (L7), evals-* (L4). Code backs the placement."},
  "agenticsorg/community-projects":{t:"code",n:"lib/ inspected directly this session: state-machine.js + workflow-guards.js confirm the L7 governance placement."},
  "agenticsorg/lean-agentic":{t:"warn",n:"CODE CONTRADICTS DESCRIPTION: the repo is ~1.2MB of Rust with a single src/ dir, not a Lean4 proof system. The L8 formal-verification placement is description-tier and likely overstated pending real code."},
@@ -156,6 +160,7 @@ const EVID={
 function evOf(name){return EVID[name]||{t:"desc",n:"Classified from the repo description/README only. Not yet verified against code."};}
 const EVLBL={code:"code ✓",warn:"desc ⚠",desc:"desc",auto:"auto ⟳"};
 const GAPS={
+ "summarybotng/summarybot-ng":["Verify runtime behaviour + summary quality to move beyond structural tagging.","Turn architecture/security-architecture.md into an actual security review to earn the sec span.","Cite source messages/links in summaries (provenance) to reach toward L8 continuity.","Surface issue tracker + docs + PRD/ADRs in the UI to meet the intake qualification gate."],
  "ruvnet/metaharness":["Bind identity into the witness chain (identity is the weakest span in the whole set) so provenance is attributable, not just present.","Push memory sovereignty down to L2/L3: let the scoped memory namespace run under the user's own infrastructure, not only local disk.","Publish the L8 continuity-fabric interface as an open spec so other harnesses can interoperate."],
  "ruvnet/ruflo":["Add L8 continuity: promote the light swarm memory into persistent, audited cross-session memory.","Emit a provenance trail of which agent took which action on what authority.","Move from desc to code-verified with tests that exercise the coordination."],
  "ruvnet/helix":["Add provenance/citation to every health claim (medical output without a source trail is the critical gap).","Strengthen identity (patient auth + record binding).","Verify the anti-hallucination (L8) claim with a reproducible eval so it becomes code-verified."],

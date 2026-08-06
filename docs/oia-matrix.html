@@ -19,6 +19,7 @@ th{font-size:13px;color:var(--tx);font-weight:750;position:sticky;top:0;backgrou
 th.state{color:var(--o)}
 td.app{text-align:left;font-weight:650;white-space:nowrap;position:sticky;left:0;background:var(--card);border-right:1px solid var(--line);cursor:pointer}
 td.app:hover{background:var(--card2)}td.app small{display:block;color:var(--mut);font-weight:400;font-size:11px}
+.ghav{width:18px;height:18px;border-radius:4px;vertical-align:-3px;margin-right:6px;background:var(--line)}
 tr.sel td.app{box-shadow:inset 3px 0 0 var(--o)}
 .cell{width:32px;height:32px;border-radius:6px;margin:auto;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer}
 .c2{background:var(--o);color:#fff}
@@ -262,7 +263,7 @@ document.getElementById('body').innerHTML=apps.map((a,i)=>{
  const cells=a[2].map((v,li)=>`<td>${v?`<div class="cell c${v}" role="button" tabindex="0" aria-label="${a[0]} · ${layers[li][0]} ${layers[li][1]} (${v==2?'centre of gravity':'meaningful presence'})" onclick="pick(${i},${li})">${v==2?'●':'·'}</div>`:'<div class="cell c0"></div>'}</td>`).join('');
  const spans=a[3].map(s=>s[1]===''?`<span class="pill">${s[0]}</span>`:`<span class="pill ${s[1]}">${s[0]}</span>`).join('');
  const div=(i>0&&a[6]==='infra'&&apps[i-1][6]==='app')?`<tr class="grp"><td colspan="12">Infrastructure / content / meta — not intelligence applications (the OIA lens collapses them to L9 or flags out-of-scope)</td></tr>`:'';
- return div+`<tr id="r${i}" class="${a[6]}"><td class="app" role="button" tabindex="0" aria-label="${a[0]} — expand rationale" onclick="pick(${i})">${a[0]}<span class="badge ${evOf(a[0]).t}">${EVLBL[evOf(a[0]).t]}</span><small>${a[1]}</small></td>${cells}<td class="spans">${spans}</td></tr>`;
+ return div+`<tr id="r${i}" class="${a[6]}"><td class="app" role="button" tabindex="0" aria-label="${a[0]} — expand rationale" onclick="pick(${i})"><img class="ghav" src="https://github.com/${a[0].split('/')[0]}.png?size=40" alt="" loading="lazy" onerror="this.remove()">${a[0]}<span class="badge ${evOf(a[0]).t}">${EVLBL[evOf(a[0]).t]}</span><small>${a[1]}</small></td>${cells}<td class="spans">${spans}</td></tr>`;
 }).join('');
 document.getElementById('body').addEventListener('keydown',e=>{const t=e.target;if((e.key==='Enter'||e.key===' ')&&t&&((t.classList.contains('cell')&&!t.classList.contains('c0'))||t.classList.contains('app'))){e.preventDefault();t.click();}});
 function pick(i,focus){
@@ -279,7 +280,7 @@ function pick(i,focus){
  const tr=document.createElement('tr'); tr.className='detail'; tr.setAttribute('data-for',i);
  const td=document.createElement('td'); td.colSpan=12;
  td.innerHTML=`<div class="bd">`+
-   `<div class="mrow"><b>${a[0]}</b> &mdash; ${a[1]}</div>`+
+   `<div class="mrow"><img class="ghav" src="https://github.com/${a[0].split('/')[0]}.png?size=40" alt="" loading="lazy" onerror="this.remove()"><b>${a[0]}</b> &mdash; ${a[1]}</div>`+
    `<div class="mrow"><b>Layer footprint &amp; rationale</b></div>${lines}`+
    `<div class="mrow"><b>Strongest spans:</b> ${spans}</div>`+
    `<div class="mrow"><b>Operational read (metaharness lens):</b> ${a[5]}</div>`+

@@ -8,8 +8,10 @@ body:
       value: |
         ## Agentics Foundation — Open Source Project Submission
 
-        Only registered members of the Agentics Foundation may submit projects.
-        Submissions from non-members will not be reviewed.
+        Any GitHub user may submit a public repository for consideration. Submitting
+        this form (you must be signed in to GitHub) auto-classifies the repo into the
+        OIA Application Matrix under **pending review**, and posts you a README badge.
+        The committee then reviews the placement before it is promoted to the curated matrix.
 
         Please complete all required fields below.
 
@@ -82,8 +84,8 @@ body:
     attributes:
       label: Acknowledgments
       options:
-        - label: I am a registered member of the Agentics Foundation in good standing
-          required: true
+        - label: I am a member of the Agentics Foundation (leave unchecked if submitting only for OIA matrix listing)
+          required: false
         - label: The repository is public and has a clearly stated open source license
           required: true
         - label: The project is aligned with the Foundation's mission, values, and code of conduct

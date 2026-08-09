@@ -22,8 +22,8 @@ on:
     types: [opened, edited, labeled, unlabeled, closed, reopened]
 
 permissions:
-  contents: read
-  issues: read
+  contents: write
+  issues: write
   pages: write
   id-token: write
 
@@ -42,6 +42,27 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '20'
+      - name: OIA matrix — auto-classify submissions & promote approvals
+        if: github.event_name == 'issues'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
+          EVENT_DATE: ${{ github.event.issue.updated_at }}
+        run: node scripts/oia-intake-step.mjs
+      - name: Persist OIA matrix changes
+        if: github.event_name == 'issues'
+        run: |
+          if [ -n "$(git status --porcelain docs/data/oia-matrix.json docs/badges)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add docs/data/oia-matrix.json docs/badges
+            git commit -m "oia-matrix: auto-update from issue #${{ github.event.issue.number }} [skip ci]"
+            git pull --rebase --autostash origin main || true
+            git push || echo "push skipped (branch protection or race); deploy still reflects local tree"
+          fi
       - name: Build dashboard.json
         env:
           GITHUB_TOKEN: ${{ github.token }}

@@ -19,7 +19,6 @@ th{font-size:13px;color:var(--tx);font-weight:750;position:sticky;top:0;backgrou
 th.state{color:var(--o)}
 td.app{text-align:left;font-weight:650;white-space:nowrap;position:sticky;left:0;background:var(--card);border-right:1px solid var(--line);cursor:pointer}
 td.app:hover{background:var(--card2)}td.app small{display:block;color:var(--mut);font-weight:400;font-size:11px}
-.ghav{width:18px;height:18px;border-radius:4px;vertical-align:-3px;margin-right:6px;background:var(--line)}
 tr.sel td.app{box-shadow:inset 3px 0 0 var(--o)}
 .cell{width:32px;height:32px;border-radius:6px;margin:auto;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer}
 .c2{background:var(--o);color:#fff}
@@ -52,6 +51,14 @@ details[open] summary{border-bottom:1px solid var(--line)}
 .dc p,.dc li{color:var(--mut);font-size:13.5px}.dc b{color:var(--tx)}
 .dc table{min-width:0;font-size:13px;margin:8px 0}.dc td,.dc th{text-align:left;padding:6px 10px;border:1px solid var(--line)}
 .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}.acts button{background:var(--o);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:13.5px;font-weight:650;cursor:pointer}.acts button.ghost{background:var(--card2);color:var(--tx);border:1px solid var(--line)}#pt{width:100%;min-height:230px;margin-top:10px;background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:12px;font:12.5px/1.5 ui-monospace,Menlo,monospace;resize:vertical}#promptbox button{margin-top:8px;background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px}.warn{border-left:3px solid var(--o);background:var(--card2);padding:10px 14px;border-radius:8px;color:var(--mut);font-size:13.5px}
+
+.grp.pend td{color:var(--brand-dark);background:var(--o2);border-top:1px solid var(--o)}
+tr.pending td.app{box-shadow:inset 3px 0 0 #3e9bff}
+.submeta{display:block;color:#3e9bff;font-weight:400;font-size:10px;margin-top:1px}
+.submit-btn{display:inline-block;background:var(--o);color:#fff;text-decoration:none;border-radius:8px;padding:8px 14px;font-weight:650;font-size:13.5px}
+.submit-btn:hover{background:var(--brand-dark)}
+.embed{width:100%;min-height:44px;margin-top:4px;background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:8px;font:11.5px/1.4 ui-monospace,Menlo,monospace;resize:vertical}
+.ghav{width:18px;height:18px;border-radius:4px;vertical-align:-3px;margin-right:6px;background:var(--line)}
 </style></head><body>
 <div style="margin-bottom:12px"><a href="./" style="color:var(--mut);text-decoration:none;font-size:13px">← Agentics Open Source Committee · Dashboard</a></div>
 <div style="background:var(--o2);border:1px solid var(--o);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;color:var(--brand-dark);font-size:13px"><b>v0 draft — a strawman for committee review, not a measurement.</b> Most placements are classified from repo descriptions (see the per-row evidence tier); some are unverified and may be wrong. This is a working tool to structure the OIA intake discussion, not an official Foundation ranking of any project. <a href="https://github.com/agenticsorg/community-projects/issues/36" target="_blank" rel="noopener noreferrer" style="color:var(--brand-dark);font-weight:700;text-decoration:underline">Share feedback &rarr;</a></div>
@@ -64,6 +71,7 @@ details[open] summary{border-bottom:1px solid var(--line)}
   <span><b class="state" style="color:var(--o)">L3 · L8</b> = state-holding layers</span>
   <span><span class="badge code">code ✓</span> verified in code &nbsp; <span class="badge desc">desc</span> description only &nbsp; <span class="badge warn">desc ⚠</span> code differs</span>
 </div>
+<div style="margin:2px 0 16px"><a class="submit-btn" href="https://github.com/agenticsorg/community-projects/issues/new?template=project-submission.yml" target="_blank" rel="noopener noreferrer">+ Submit a repo for consideration</a> <span style="color:var(--mut);font-size:12px">Sign in to GitHub to submit. A committee workflow auto-classifies it and adds it to the matrix under <b>pending review</b>.</span></div>
 <div class="wrap"><table id="t"><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table></div>
 
 <p style="color:var(--mut);font-size:13px;margin:10px 2px">Click any row to expand its rationale, gap prompt, and rescan inline. Click again to collapse.</p>
@@ -95,101 +103,22 @@ details[open] summary{border-bottom:1px solid var(--line)}
 <script>
 const layers=[["L0","Physical Compute"],["L1","Silicon Abstraction"],["L2","Sovereign Infrastructure"],["L3","Agent Data Substrate"],["L4","Model Training & Adaptation"],["L5","Inference & Retrieval"],["L6","Context & Knowledge"],["L7","Orchestration & Workflow"],["L8","Continuity Fabric"],["L9","Human & Browser Interface"]];
 const STATE={3:1,8:1};
-// [name, desc, [L0..L9 values], [[span,cls]...], whyByLayerIndex{}, opsNote, kind ("app"|"infra")]
-const apps=[
- ["ruvnet/metaharness","factory for agent frameworks",[0,1,1,1,2,1,1,2,2,1],[["provenance","prov"],["auditability","aud"],["security","sec"]],
-   {4:"Weight-EFT LoRA-tunes the cheap tier",5:"cost router picks cheapest model that clears the bar",7:"mints local MCP servers + governance policy",8:"scoped memory, witness-signed provenance, Darwin safe self-learning",1:"RVM hardware-isolated sandbox",9:"npx CLI per repo"},
-   "Ships its own score command (fit/build/safety/cost) — the natural mechanical scoring engine for the funnel. Widest vertical extension (L4-L9); by OIA Decision 10 that is both its power and the concentration to watch.","app"],
- ["ruvnet/ruflo","multi-agent swarm meta-harness",[0,0,0,1,0,1,0,2,1,1],[["auditability","aud"]],
-   {7:"coordinates multi-player agent swarms — pure orchestration",8:"shared swarm memory (light)",9:"CLI surface"},
-   "The 'leading agent meta-harness' per its own description; overlaps metaharness at L7 — a pick-winners candidate.","app"],
- ["ruvnet/helix","local-first health intelligence",[0,0,1,1,0,1,2,1,2,2],[["sovereignty","sov"],["auditability","aud"]],
-   {2:"local-first = runs under the user's own control",6:"health-knowledge grounding",8:"anti-hallucination = verifiable judgment",9:"patient-facing interface"},
-   "One of only three apps that genuinely reach L8, via anti-hallucination/verifiability. Local-first gives it the strongest sovereignty posture in the set.","app"],
- ["ruvnet/ruv-neural","edge gamma-entrainment OS",[2,2,1,0,1,0,0,1,0,0],[["energy","ene"],["sovereignty","sov"]],
-   {0:"physical edge compute for entrainment",1:"Rust/WASM portable runtime",4:"research-loop adaptation"},
-   "The only app anchored in the low layers (L0-L1). Edge/energy focus makes it structurally unlike the orchestration cluster.","app"],
- ["ruvnet/hackerone","defender-side triage harness",[0,0,0,1,0,1,1,2,0,1],[["security","sec"],["auditability","aud"]],
-   {6:"dedupe against known reports",7:"triage + CVSS scoring workflow",9:"analyst-facing"},
-   "Security is its entire purpose (defender-side triage), so it anchors the security span even though it sits structurally at L7.","app"],
- ["ruvnet/rupixel","visual RAG on RuVector ANN",[0,1,0,2,0,1,2,0,0,0],[["perf (not a span)",""]],
-   {1:"Rust port for speed",3:"RuVector ANN substrate (HNSW + IVF-Flat)",6:"pixel-native visual retrieval"},
-   "A substrate/retrieval play (L3+L6). Performance-oriented; no strong governance span, which is itself a datapoint.","app"],
- ["ruvnet/ruvn","cited research dossier harness",[0,0,0,1,0,1,2,2,1,1],[["provenance","prov"],["auditability","aud"]],
-   {6:"assembles knowledge into a dossier",7:"orchestrates the research loop",8:"carries evidence across steps"},
-   "'Cited' = strong provenance; 'graded' = auditability. A clean example of an L6-L7 app that earns its spans through its output contract.","app"],
- ["ruvnet/llamastack","UI for Llama Stack agents",[0,0,0,0,0,1,1,1,0,2],[["identity","idn"]],
-   {5:"front-ends inference",7:"exposes agent actions",9:"the UI itself is the product"},
-   "Interface-layer app. Rare identity touch (user-facing auth), which stands out given identity is the set's weakest span.","app"],
- ["agenticsorg/edge-agents","serverless agents",[0,1,2,0,0,1,0,2,0,1],[["sovereignty","sov"],["security","sec"]],
-   {1:"runtime portability",2:"serverless = sovereign infra placement",7:"agent orchestration"},
-   "L2+L7. Where compute runs is its defining choice, giving it a sovereignty posture the pure-orchestration apps lack.","app"],
- ["agenticsorg/lean-agentic","Lean4 formal-verification agents",[0,0,0,0,1,0,0,1,2,0],[["auditability","aud"],["provenance","prov"]],
-   {4:"formal methods over model behaviour",7:"agent execution",8:"verifiable judgment via Lean4 proof — the strongest form"},
-   "Reaches L8 through formal proof — the most rigorous auditability in the set. Structurally rare and strategically interesting.","app"],
- ["proffesor-for-testing/agentic-qe","QE fleet harness",[0,0,0,1,0,1,1,2,1,1],[["security","sec"],["auditability","aud"]],
-   {3:"ReasoningBank persistent knowledge graph stores learned test patterns",5:"TinyDancer router matches task complexity to the cheapest model tier",6:"coverage intelligence + cross-project pattern reuse as knowledge",7:"60+ QE agents under a Queen Coordinator; MCP across 11 agent platforms",8:"ReasoningBank learns patterns across sessions/projects — improves over time",9:"CLI + integration surface into coding agents"},
-   "The QE-specialised sibling of metaharness: a fleet harness whose product is quality (test-gen, coverage, flaky detection, quality gates). Anchors auditability through its verify-the-code purpose and carries security via SAST/DAST. First external submission in the set (Dragan Spiridonov, Serbian Agentics Foundation; homepage https://agentic-qe.dev, npm package agentic-qe).","app"],
- ["ohdearquant/lionagi","governed multi-agent orchestration",[0,0,0,0,0,1,0,2,1,1],[["auditability","aud"],["security","sec"]],
-   {5:"multi-provider routing — API + subprocess providers (Claude Code, Codex, DeepSeek) in one orchestration graph",7:"governed multi-agent DAG flows, parallel fan-outs, Session coordination — the core",8:"durable run persistence (~/.lionagi/runs) with resume/reattach; typed, inspectable Branch state",9:"CLI-first (li agent / li o flow) + Lion Studio web dashboard"},
-   "'You own the loop': governed orchestration with typed, inspectable state, per-tool permission policies, guard hooks and git-worktree sandboxing — hence the auditability + security spans. A mature framework (PyPI, 233+ releases, ~400 stars). Its durable-persistence + resume gives a genuine L8 continuity touch alongside the L7 centre. External submission (Ocean / Haiyang Li).","app"],
- ["summarybotng/summarybot-ng","Discord conversation-summariser (Claude via OpenRouter)",[0,0,1,1,0,2,2,1,0,1],[["identity","idn"],["sovereignty","sov"]],
-   {2:"self-hostable (Docker/compose, fly/railway/render) - though default inference is hosted",3:"src/archive persistence: importers, retention, Google-Drive OAuth sync",5:"Claude via OpenRouter - the summarisation core",6:"conversation to structured knowledge; Confluence/Notion/Wiki export",7:"command_handlers + scheduler + webhook delivery",9:"Discord slash-commands + REST API"},
-   "A Discord bot that turns conversations into structured summaries and archives them. Sits L5-L6 (summarisation + knowledge capture) over an L3 archive substrate, with an L9 Discord/REST surface. Identity span is real (OAuth + API-key backends + Discord permissions). Self-describes as an agentically constructed rebuild: structure is genuine but early-stage (2 stars, many AI-generated status docs), and placements are structural, not runtime-verified.","app"],
- ["adrianco/retort","DoE evaluation harness for AI coding stacks",[0,0,1,1,1,1,1,2,0,1],[["provenance","prov"],["auditability","aud"]],
-   {2:"docker/local playpens + local MLX models (Hermes/oMLX) - self-host, not only hosted inference",3:"master.db/retort.db (alembic-migrated) + mlflow sink; aggregate rolls every experiment into one store",4:"model x config studies - prompt, sampling, context, thinking-level and self-repair as designed factors",5:"drives inference across claude-code/codex/hermes/gemini/opencode and measures it",6:"graphify code knowledge-graph before a run; distils the leading stack from the combinatorial mess",7:"isolated playpen runners + promotion gates/lifecycle - the experiment-orchestration centre",9:"CLI + live retort monitor + generated report blogs"},
-   "A statistical Design-of-Experiments harness: it runs coding agents across language, model, tooling and serving, scores each run against a spec (mechanical gate plus a second-opinion LLM judge vs a pinned checklist; no proof = no pass), and distils the leading stack into a living recommendation. L7 orchestration centre with wide vertical extension (L2-L9). Auditability is its whole philosophy (verifiable spec-conformance, not vibes); provenance is structural - the experiment path IS the credit, and provenance.json records the exact stack for reproducibility. Adrian Cockcroft's project (193 stars); the DoE-driven sibling of ruvnet/metaharness, which it explicitly references.","app"],
- ["pacphi/agentic-kit","install/heal/prove kit + host-neutral runner + dashboard",[0,0,1,1,0,1,1,2,0,1],[["provenance","prov"],["auditability","aud"]],
-   {2:"cross-platform local install, docker/compose, embedded SQLite, zero runtime deps, Ollama - a genuine self-host posture",3:"AgentDB substrate + health-history + transcript/usage harvest",5:"routes inference across Anthropic/OpenAI/OpenRouter/Ollama via host-provider bindings; search_ruvnet MCP retrieval",6:"RuvNet Brain - offline source-cited knowledge base over the rUv stack; answers cite real source not stale priors",7:"host-neutral execution runner (ak run) across Claude/Codex/OpenCode under one routing policy; self-healing sync/heal - the centre",9:"live local dashboard (SSE live-view, auth/remediation) + statusline + CLI"},
-   "One command to install, heal and prove ruflo (claude-flow) + agentic-qe + RuvNet Brain, with ambidextrous Claude/Codex/OpenCode host routing and a live local dashboard. L7 orchestration centre (host-neutral runner + self-healing convergence) over an L2 self-host base, an L3 AgentDB substrate and an L6 source-cited knowledge layer. Provenance and auditability are the defining disciplines: 24 ADRs, prove-via-verify (ak x verify runs paths end-to-end against real CLIs), and provider/model/billing claims explicitly labelled observed/configured/inferred/unknown. Chris Phillipson's project (32 stars); a companion/installer for two apps already in this set (ruflo, agentic-qe), so it is tightly coupled to the rUv ecosystem it wraps.","app"],
- ["agenticsorg/community-projects","the committee's intake harness",[0,0,0,1,0,0,0,2,0,1],[["auditability","aud"]],
-   {3:"approved-projects registry",7:"RFC-001 governance agent + intake state machine",9:"Pages committee dashboard"},
-   "The committee's own harness — an instance of the metaharness pattern applied to governance, not an intelligence application. This is the thing that RUNS the funnel.","infra"],
- ["agenticsorg/OIA-Model","the OIA spec reader",[0,0,0,1,0,0,0,0,0,2],[["meta",""]],
-   {3:"SQLite feedback DB",9:"the interactive reader UI"},
-   "Not an OIA application — it is the spec's own reading surface. The reference point the whole matrix is measured against.","infra"],
- ["agenticsorg/agentics-wiki","community wiki",[0,0,0,0,0,0,1,0,0,2],[["content",""]],
-   {6:"community knowledge base",9:"wiki reading surface"},
-   "Content repo. The OIA lens correctly shows it barely touches the stack (L6/L9) — it is documentation, not an agentic system.","infra"],
- ["agenticsorg/agentics.org-website2026","the public website",[0,0,0,0,0,0,0,0,0,2],[["content",""]],
-   {9:"public marketing website"},
-   "Pure interface — a website. Only L9. Exactly what the lens should show for a non-intelligence repo, and a useful negative example.","infra"],
- ["agenticsorg/agenticsorg","the org .github profile",[0,0,0,0,0,0,0,0,0,1],[["non-app",""]],
-   {9:"org profile README"},
-   "Not an application at all — the organisation's profile README. Included for completeness; the OIA lens flags it as out of scope.","infra"],
-];
-const EVID={
- "summarybotng/summarybot-ng":{t:"code",n:"File tree inspected 2026-08-05: src/archive (importers/retention/oauth sync), src/command_handlers (summarize/schedule), REST API confirm the L3/L5/L6/L7/L9 + identity placements. NOT runtime-verified; security is documented (architecture/security-architecture.md) not audited; maturity modest."},
- "adrianco/retort":{t:"code",n:"File tree inspected 2026-08-06: src/retort/playpen (runners/docker/toolchains), commands/scoring + evaluation/judges, promotion/gates+lifecycle, analysis/anova+bayesian+pareto, master.db via alembic confirm the L3/L4/L5/L7 + aud/prov placements. NOT runtime-verified; the ~49-experiment result set is the author's, not reproduced here."},
- "pacphi/agentic-kit":{t:"code",n:"File tree + 24 ADRs inspected 2026-08-06: src/lib/execution (claude/codex/opencode/runner/handoff), src/lib/dashboard (live-view/sse/request+session-security), adapters (provenance/ownership/lifecycle), agentdb.mjs, docker/compose confirm the L2/L3/L5/L6/L7/L9 + prov/aud placements. NOT runtime-verified; prove/heal claims are read from code+ADRs, not executed."},
- "ruvnet/metaharness":{t:"code",n:"packages/ confirms it: darwin-mode (safe learning, L8), host-* adapters + harness (L7), evals-* (L4). Code backs the placement."},
- "agenticsorg/community-projects":{t:"code",n:"lib/ inspected directly this session: state-machine.js + workflow-guards.js confirm the L7 governance placement."},
- "agenticsorg/lean-agentic":{t:"warn",n:"CODE CONTRADICTS DESCRIPTION: the repo is ~1.2MB of Rust with a single src/ dir, not a Lean4 proof system. The L8 formal-verification placement is description-tier and likely overstated pending real code."},
-};
+// Matrix data is loaded from data/oia-matrix.json at runtime (curated = committee-reviewed,
+// pending = auto-classified from a submission awaiting promotion). The internal apps[]/EVID/GAPS
+// shapes are rebuilt from that JSON so all render/drill-down/rescan logic below is unchanged.
+// apps tuple: [name, desc, [L0..L9], [[span,cls]...], whyByLayerIndex{}, opsNote, kind ("app"|"infra")]
+let apps=[], EVID={}, GAPS={}, SUBMETA={};
+function slug(n){return 'oia-'+String(n).replace(/[^a-z0-9]+/gi,'-').toLowerCase();}
 function evOf(name){return EVID[name]||{t:"desc",n:"Classified from the repo description/README only. Not yet verified against code."};}
 const EVLBL={code:"code ✓",warn:"desc ⚠",desc:"desc",auto:"auto ⟳"};
-const GAPS={
- "summarybotng/summarybot-ng":["Verify runtime behaviour + summary quality to move beyond structural tagging.","Turn architecture/security-architecture.md into an actual security review to earn the sec span.","Cite source messages/links in summaries (provenance) to reach toward L8 continuity.","Surface issue tracker + docs + PRD/ADRs in the UI to meet the intake qualification gate."],
- "adrianco/retort":["Reach L8 continuity: today master.db is a results store; a durable, audited cross-run memory agents can consult would make the living recommendation a real continuity fabric.","Bind identity into provenance: runs are attributable by GitHub-id namespace, but no signed identity records who or what produced a result.","Publish the scoring rubric as an open contract so third-party experiments are comparable, not just aggregatable.","Index the qualification gate (issue tracker + PRD/ADRs) in a browsable form; the evidence lives in docs/ but is not surfaced for intake."],
- "pacphi/agentic-kit":["Reach L8 continuity: self-heal re-converges config, but no durable cross-session agent memory is carried forward - health-history is telemetry, not a continuity fabric.","Establish standalone value: it installs/proves ruflo + agentic-qe, so part of its worth is derivative of set members already scored; a standalone-value claim needs its own eval.","Turn the security controls (dashboard auth, request/session security, fail-closed) into a stated, reviewed security span rather than per-surface ADRs.","Ship a recorded ak x verify run so the prove claim moves from code-read to behaviourally-verified."],
- "ruvnet/metaharness":["Bind identity into the witness chain (identity is the weakest span in the whole set) so provenance is attributable, not just present.","Push memory sovereignty down to L2/L3: let the scoped memory namespace run under the user's own infrastructure, not only local disk.","Publish the L8 continuity-fabric interface as an open spec so other harnesses can interoperate."],
- "ruvnet/ruflo":["Add L8 continuity: promote the light swarm memory into persistent, audited cross-session memory.","Emit a provenance trail of which agent took which action on what authority.","Move from desc to code-verified with tests that exercise the coordination."],
- "ruvnet/helix":["Add provenance/citation to every health claim (medical output without a source trail is the critical gap).","Strengthen identity (patient auth + record binding).","Verify the anti-hallucination (L8) claim with a reproducible eval so it becomes code-verified."],
- "ruvnet/ruv-neural":["Grow a real L7 orchestration surface so the edge OS can be driven by agents.","Add auditability of the closed loop (what was measured, what actuated, on what basis).","Meet the qualification gate: issue tracker + PRD + ADRs."],
- "ruvnet/hackerone":["Add L8 continuity: persistent triage memory so dedup/scoring learns over time.","Emit decision provenance (why a report was scored/deduped).","Add reporter identity binding.","Verify in code to leave desc-tier."],
- "ruvnet/rupixel":["No governance span at all: add lineage/provenance to the ANN substrate (L3 lineage feeds auditability + provenance).","Add an L7 or L8 surface so it is a system, not just a fast retrieval library.","Add docs/PRD to qualify."],
- "ruvnet/ruvn":["Add L8 persistent evidence memory so dossiers accumulate across sessions.","Strengthen source identity/attribution on the cited evidence.","Verify the cited/graded contract in code."],
- "ruvnet/llamastack":["Deepen L7: real agent orchestration behind the UI, not just a front-end.","Formalise the identity/auth it already touches into a full span.","Add continuity (L8) so sessions persist.","Qualify with docs/ADRs."],
- "agenticsorg/edge-agents":["Add an L8 continuity fabric for serverless agents (state that survives cold starts).","Emit action provenance + tie in identity.","Verify the serverless-sovereignty claim in code."],
- "agenticsorg/lean-agentic":["EVIDENCE FIRST: reconcile code with the description. Either ship the Lean4 formal-verification layer the README promises (making L8 genuinely code-verified) or correct the README to what the Rust code does.","Add issue tracker + PRD + ADRs to meet the qualification gate.","Only then extend orchestration (L7)."],
- "proffesor-for-testing/agentic-qe":["Verify the L8 pattern-learning (ReasoningBank) claim with a reproducible eval so continuity becomes code-verified, not description-tier.","Emit provenance on generated tests: which agent/model produced each test on what basis — provenance is absent and would deepen the auditability the tool is fundamentally about.","Bind identity into quality-gate approvals (who signed off) so gate decisions are attributable; identity is the set's weakest span.","Meet and confirm the qualification gate — issue tracker, PRD, ADRs, and infographic all present (verify each, do not assume)."],
- "ohdearquant/lionagi":["Verify the L8 persistence/resume claims with a reproducible eval (kill a run mid-flight, reattach, confirm state fidelity) so continuity moves from desc to code-verified.","Emit provenance across multi-agent runs: which agent/model/tool acted at each DAG node on what authority, turning the 'inspectable state' into an auditable trail.","Bind identity into the per-tool permission policies (who authorized the call) — identity is the set's weakest span.","Meet and confirm the qualification gate — issue tracker, PRD, ADRs, and infographic all present (verify each, do not assume)."],
- "agenticsorg/community-projects":["Dogfood OIA scoring on incoming submissions (wire metaharness score into intake Stage 2a).","Add identity/roster provenance (the exact gap the committee hit today).","Already code-verified at L7; extend auditability of votes."],
- "agenticsorg/OIA-Model":["Meta (the spec reader). No remediation as an application; its work is keeping the digest and assessment tools current."],
- "agenticsorg/agentics-wiki":["Not an intelligence application. If it is meant to become one, define which OIA layer it targets; otherwise it stays content at L6/L9."],
- "agenticsorg/agentics.org-website2026":["Not an intelligence application, a website at L9. No OIA remediation applies unless it hosts an agent surface."],
- "agenticsorg/agenticsorg":["Out of scope, the org profile README. No OIA remediation applies."],
-};
+function ingest(list,status){
+ for(const e of (list||[])){
+  apps.push([e.name,e.desc,e.layers,(e.spans||[]).map(s=>[s.label,s.badge]),e.notes||{},e.narrative,e.category]);
+  if(e.evidence) EVID[e.name]=e.evidence;
+  if(e.gaps) GAPS[e.name]=e.gaps;
+  SUBMETA[e.name]={status:status,submitted:e.submitted,issue:e.issue};
+ }
+}
 function appByName(n){return apps.find(a=>a[0]===n);}
 function genPrompt(name){
  const a=appByName(name), L=layers, e=evOf(name);
@@ -256,15 +185,24 @@ async function retest(name){
   const bdg=document.querySelector('#r'+apps.indexOf(a)+' .badge'); if(bdg){bdg.className='badge auto';bdg.textContent='auto ⟳';}
  }catch(e){s.textContent="Scan failed (offline, CORS, or rate limit): "+e;}
 }
-
-document.getElementById('key').innerHTML=layers.map(l=>`<span><b>${l[0]}</b> ${l[1]}${STATE[+l[0].slice(1)]?' <span style="color:var(--o)">(state)</span>':''}</span>`).join('');
-document.getElementById('head').innerHTML='<th class="app" style="text-align:left">Application</th>'+layers.map(l=>`<th class="${STATE[+l[0].slice(1)]?'state':''}" title="${l[1]}">${l[0]}</th>`).join('')+'<th style="text-align:left">Spans</th>';
-document.getElementById('body').innerHTML=apps.map((a,i)=>{
- const cells=a[2].map((v,li)=>`<td>${v?`<div class="cell c${v}" role="button" tabindex="0" aria-label="${a[0]} · ${layers[li][0]} ${layers[li][1]} (${v==2?'centre of gravity':'meaningful presence'})" onclick="pick(${i},${li})">${v==2?'●':'·'}</div>`:'<div class="cell c0"></div>'}</td>`).join('');
- const spans=a[3].map(s=>s[1]===''?`<span class="pill">${s[0]}</span>`:`<span class="pill ${s[1]}">${s[0]}</span>`).join('');
- const div=(i>0&&a[6]==='infra'&&apps[i-1][6]==='app')?`<tr class="grp"><td colspan="12">Infrastructure / content / meta — not intelligence applications (the OIA lens collapses them to L9 or flags out-of-scope)</td></tr>`:'';
- return div+`<tr id="r${i}" class="${a[6]}"><td class="app" role="button" tabindex="0" aria-label="${a[0]} — expand rationale" onclick="pick(${i})"><img class="ghav" src="https://github.com/${a[0].split('/')[0]}.png?size=40" alt="" loading="lazy" onerror="this.remove()">${a[0]}<span class="badge ${evOf(a[0]).t}">${EVLBL[evOf(a[0]).t]}</span><small>${a[1]}</small></td>${cells}<td class="spans">${spans}</td></tr>`;
-}).join('');
+function render(){
+ document.getElementById('key').innerHTML=layers.map(l=>`<span><b>${l[0]}</b> ${l[1]}${STATE[+l[0].slice(1)]?' <span style="color:var(--o)">(state)</span>':''}</span>`).join('');
+ document.getElementById('head').innerHTML='<th class="app" style="text-align:left">Application</th>'+layers.map(l=>`<th class="${STATE[+l[0].slice(1)]?'state':''}" title="${l[1]}">${l[0]}</th>`).join('')+'<th style="text-align:left">Spans</th>';
+ document.getElementById('body').innerHTML=apps.map((a,i)=>{
+  const cells=a[2].map((v,li)=>`<td>${v?`<div class="cell c${v}" role="button" tabindex="0" aria-label="${a[0]} · ${layers[li][0]} ${layers[li][1]} (${v==2?'centre of gravity':'meaningful presence'})" onclick="pick(${i},${li})">${v==2?'●':'·'}</div>`:'<div class="cell c0"></div>'}</td>`).join('');
+  const spans=a[3].map(s=>s[1]===''?`<span class="pill">${s[0]}</span>`:`<span class="pill ${s[1]}">${s[0]}</span>`).join('');
+  const st=(SUBMETA[a[0]]||{}).status, prev=i>0?apps[i-1]:null, pst=prev?(SUBMETA[prev[0]]||{}).status:null;
+  let div='';
+  if(st==='pending' && pst!=='pending'){
+   div=`<tr class="grp pend"><td colspan="12">Pending review — auto-classified from a submission (desc/auto tier), awaiting committee promotion</td></tr>`;
+  }else if(st!=='pending' && i>0 && a[6]==='infra' && prev[6]==='app' && pst!=='pending'){
+   div=`<tr class="grp"><td colspan="12">Infrastructure / content / meta — not intelligence applications (the OIA lens collapses them to L9 or flags out-of-scope)</td></tr>`;
+  }
+  const sm=SUBMETA[a[0]]||{};
+  const submeta=(st==='pending')?`<span class="submeta">submitted${sm.submitted?' '+sm.submitted:''}${sm.issue?` · <a href="https://github.com/agenticsorg/community-projects/issues/${sm.issue}" target="_blank" rel="noopener noreferrer">#${sm.issue}</a>`:''}</span>`:'';
+  return div+`<tr id="r${i}" class="${a[6]}${st==='pending'?' pending':''}"><td class="app" id="${slug(a[0])}" role="button" tabindex="0" aria-label="${a[0]} — expand rationale" onclick="pick(${i})"><img class="ghav" src="https://github.com/${a[0].split('/')[0]}.png?size=40" alt="" loading="lazy" onerror="this.remove()">${a[0]}<span class="badge ${evOf(a[0]).t}">${EVLBL[evOf(a[0]).t]}</span><small>${a[1]}</small>${submeta}</td>${cells}<td class="spans">${spans}</td></tr>`;
+ }).join('');
+}
 document.getElementById('body').addEventListener('keydown',e=>{const t=e.target;if((e.key==='Enter'||e.key===' ')&&t&&((t.classList.contains('cell')&&!t.classList.contains('c0'))||t.classList.contains('app'))){e.preventDefault();t.click();}});
 function pick(i,focus){
  const open=document.querySelector('tr.detail');
@@ -277,6 +215,10 @@ function pick(i,focus){
  const cog=a[2].map((v,li)=>v?[li,v]:null).filter(Boolean).sort((x,y)=>y[1]-x[1]);
  const lines=cog.map(([li,v])=>{const L=layers[li],r=why[li]||'';const hl=(focus===li)?'style="background:var(--card);border:1px solid var(--o);border-radius:6px;padding:2px 6px;margin:-2px -6px"':'';return `<div class="layline" ${hl}><span class="tag ${v==2?'cog':'pres'}">${L[0]} ${v==2?'●':'·'}</span><span><b>${L[1]}</b>${r?' — '+r:''}</span></div>`;}).join('');
  const spans=a[3].map(s=>s[1]===''?`<span class="pill">${s[0]}</span>`:`<span class="pill ${s[1]}">${s[0]}</span>`).join('');
+ const bslug=slug(a[0]);
+ const badgeUrl=`badges/${a[0]}.svg`;
+ const rowUrl=`oia-matrix.html#${bslug}`;
+ const embed=`[![OIA](https://agenticsorg.github.io/community-projects/${badgeUrl})](https://agenticsorg.github.io/community-projects/${rowUrl})`;
  const tr=document.createElement('tr'); tr.className='detail'; tr.setAttribute('data-for',i);
  const td=document.createElement('td'); td.colSpan=12;
  td.innerHTML=`<div class="bd">`+
@@ -285,8 +227,29 @@ function pick(i,focus){
    `<div class="mrow"><b>Strongest spans:</b> ${spans}</div>`+
    `<div class="mrow"><b>Operational read (metaharness lens):</b> ${a[5]}</div>`+
    `<div class="mrow"><b>Evidence tier:</b> <span class="badge ${evOf(a[0]).t}">${EVLBL[evOf(a[0]).t]}</span> ${evOf(a[0]).n}</div>`+
+   `<div class="mrow"><b>README badge</b> — links back to this row: <img src="${badgeUrl}" alt="OIA badge" style="vertical-align:middle;height:20px" onerror="this.style.display='none'"></div>`+
+   `<div><textarea class="embed" readonly onclick="this.select()">${embed}</textarea></div>`+
    `<div class="acts"><button onclick="genPrompt('${a[0]}')">Generate improvement prompt →</button> <button class="ghost" onclick="retest('${a[0]}')">Rescan repo (client-side) ↻</button></div>`+
    `<div id="rtstatus" class="mrow"></div><div id="promptbox"></div></div>`;
  tr.appendChild(td); row.after(tr);
 }
+function handleHash(){
+ const h=decodeURIComponent(location.hash.replace(/^#/,'')); if(!h) return;
+ const idx=apps.findIndex(a=>slug(a[0])===h||a[0]===h);
+ if(idx>=0){const el=document.getElementById(slug(apps[idx][0])); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); pick(idx);}
+}
+window.addEventListener('hashchange',handleHash);
+async function init(){
+ try{
+  const r=await fetch('data/oia-matrix.json',{cache:'no-store'});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const d=await r.json();
+  apps=[];EVID={};GAPS={};SUBMETA={};
+  ingest(d.curated,'curated'); ingest(d.pending,'pending');
+  render(); handleHash();
+ }catch(e){
+  document.getElementById('body').innerHTML=`<tr><td colspan="12" style="text-align:left;padding:14px">Failed to load matrix data (${e}). Expected <code>data/oia-matrix.json</code>.</td></tr>`;
+ }
+}
+init();
 </script></body></html>

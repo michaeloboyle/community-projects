@@ -3,7 +3,9 @@
 <title>OIA Application Matrix</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#fefbf6;--card:#ffffff;--card2:#fbf6ee;--line:#e3e1de;--tx:#1f1f1f;--mut:#736e64;--o:#e25c3d;--o2:#ffe8e0;--brand-dark:#c24a2f;--radius:16px}
+:root{--bg:#fefbf6;--card:#ffffff;--card2:#fbf6ee;--line:#e3e1de;--tx:#1f1f1f;--mut:#736e64;--o:#e25c3d;--o2:#ffe8e0;--brand-dark:#c24a2f;--on-fill:#0b0d11;--radius:16px}
+/* Dark theme: override neutral chrome only. Brand fills (--o/--o2/--brand-dark) stay identical across themes; text on those fills uses --on-fill dark ink in both. */
+:root[data-theme="dark"]{--bg:#17130e;--card:#221c15;--card2:#2b241b;--line:#3a3128;--tx:#f1ece3;--mut:#a99e8d}
 
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.55 "IBM Plex Mono",ui-monospace,Menlo,monospace;padding:26px 22px 70px;max-width:1180px;margin:auto}
 h1,h2{font-family:"Barlow Condensed","Arial Narrow",sans-serif;text-transform:uppercase;font-weight:700;letter-spacing:.01em}h1{font-size:34px;margin:0 0 4px;padding-bottom:14px;border-bottom:3px solid var(--o)}h2{font-size:20px;margin:26px 0 10px}
@@ -28,7 +30,7 @@ tr.infra td.app{opacity:.82}
 .badge.code{background:rgba(55,214,122,.18);color:#37d67a}
 .badge.desc{background:var(--card2);color:var(--mut)}
 .badge.warn{background:rgba(229,72,77,.16);color:#e5484d}
-.badge.auto{background:rgba(62,155,255,.16);color:#3e9bff}.c1{background:var(--o2);color:var(--brand-dark)}.c0{background:transparent;cursor:default}
+.badge.auto{background:rgba(62,155,255,.16);color:#3e9bff}.c1{background:var(--o2);color:var(--on-fill)}.c0{background:transparent;cursor:default}
 td.spans{text-align:left;font-size:12px;white-space:nowrap}
 .pill{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:1px 8px;margin:1px 2px;font-size:11px}
 .pill.sec{border-color:#e5484d;color:#e5484d}.pill.prov{border-color:var(--o);color:var(--o)}.pill.sov{border-color:#3e9bff;color:#3e9bff}.pill.aud{border-color:#37d67a;color:#37d67a}.pill.ene{border-color:#ffcf5c;color:#b98900}.pill.idn{border-color:#a06bd6;color:#a06bd6}
@@ -52,16 +54,55 @@ details[open] summary{border-bottom:1px solid var(--line)}
 .dc table{min-width:0;font-size:13px;margin:8px 0}.dc td,.dc th{text-align:left;padding:6px 10px;border:1px solid var(--line)}
 .acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}.acts button{background:var(--o);color:#fff;border:0;border-radius:8px;padding:8px 14px;font-size:13.5px;font-weight:650;cursor:pointer}.acts button.ghost{background:var(--card2);color:var(--tx);border:1px solid var(--line)}#pt{width:100%;min-height:230px;margin-top:10px;background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:12px;font:12.5px/1.5 ui-monospace,Menlo,monospace;resize:vertical}#promptbox button{margin-top:8px;background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px}.warn{border-left:3px solid var(--o);background:var(--card2);padding:10px 14px;border-radius:8px;color:var(--mut);font-size:13.5px}
 
-.grp.pend td{color:var(--brand-dark);background:var(--o2);border-top:1px solid var(--o)}
+.grp.pend td{color:var(--on-fill);background:var(--o2);border-top:1px solid var(--o)}
 tr.pending td.app{box-shadow:inset 3px 0 0 #3e9bff}
 .submeta{display:block;color:#3e9bff;font-weight:400;font-size:10px;margin-top:1px}
 .submit-btn{display:inline-block;background:var(--o);color:#fff;text-decoration:none;border-radius:8px;padding:8px 14px;font-weight:650;font-size:13.5px}
 .submit-btn:hover{background:var(--brand-dark)}
 .embed{width:100%;min-height:44px;margin-top:4px;background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:8px;font:11.5px/1.4 ui-monospace,Menlo,monospace;resize:vertical}
 .ghav{width:18px;height:18px;border-radius:4px;vertical-align:-3px;margin-right:6px;background:var(--line)}
-</style></head><body>
+.theme-tog{position:fixed;top:14px;right:16px;z-index:50;display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);color:var(--mut);border-radius:20px;padding:5px 11px;font:600 12px/1 "IBM Plex Mono",ui-monospace,Menlo,monospace;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.theme-tog:hover{border-color:var(--o);color:var(--tx)}
+.theme-tog:focus-visible{outline:2px solid var(--o);outline-offset:2px}
+</style>
+<script>
+(function(){
+  var KEY='oia-theme', root=document.documentElement;
+  function q(){return new URLSearchParams(location.search).get('theme');}
+  function stored(){try{return localStorage.getItem(KEY);}catch(e){return null;}}
+  var mq=window.matchMedia('(prefers-color-scheme: dark)');
+  function syncBtn(){
+    var b=document.getElementById('themeTog'); if(!b)return;
+    var dark=root.dataset.theme==='dark';
+    var ic=document.getElementById('themeTogIcon'), lb=document.getElementById('themeTogLabel');
+    if(ic)ic.textContent=dark?'☾':'☀';
+    if(lb)lb.textContent=dark?'Dark':'Light';
+    b.setAttribute('aria-pressed', String(dark));
+  }
+  function apply(t){root.dataset.theme=t;syncBtn();}
+  function resolve(){
+    var qq=q(); if(qq==='light'||qq==='dark')return qq;
+    var s=stored(); if(s==='light'||s==='dark')return s;
+    return mq.matches?'dark':'light';
+  }
+  window.__toggleTheme=function(){
+    var next=root.dataset.theme==='dark'?'light':'dark';
+    try{localStorage.setItem(KEY,next);}catch(e){}
+    apply(next);
+  };
+  mq.addEventListener('change',function(){
+    var qq=q(); if(qq==='light'||qq==='dark')return;
+    var s=stored(); if(s==='light'||s==='dark')return;
+    apply(mq.matches?'dark':'light');
+  });
+  apply(resolve());
+  document.addEventListener('DOMContentLoaded',syncBtn);
+})();
+</script>
+</head><body>
+<button class="theme-tog" id="themeTog" type="button" aria-label="Toggle light or dark theme" aria-pressed="false" onclick="__toggleTheme()"><span id="themeTogIcon" aria-hidden="true">◐</span> <span id="themeTogLabel">Theme</span></button>
 <div style="margin-bottom:12px"><a href="./" style="color:var(--mut);text-decoration:none;font-size:13px">← Agentics Open Source Committee · Dashboard</a></div>
-<div style="background:var(--o2);border:1px solid var(--o);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;color:var(--brand-dark);font-size:13px"><b>v0 draft — a strawman for committee review, not a measurement.</b> Most placements are classified from repo descriptions (see the per-row evidence tier); some are unverified and may be wrong. This is a working tool to structure the OIA intake discussion, not an official Foundation ranking of any project. <a href="https://github.com/agenticsorg/community-projects/issues/36" target="_blank" rel="noopener noreferrer" style="color:var(--brand-dark);font-weight:700;text-decoration:underline">Share feedback &rarr;</a></div>
+<div style="background:var(--o2);border:1px solid var(--o);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;color:var(--on-fill);font-size:13px"><b>v0 draft — a strawman for committee review, not a measurement.</b> Most placements are classified from repo descriptions (see the per-row evidence tier); some are unverified and may be wrong. This is a working tool to structure the OIA intake discussion, not an official Foundation ranking of any project. <a href="https://github.com/agenticsorg/community-projects/issues/36" target="_blank" rel="noopener noreferrer" style="color:var(--on-fill);font-weight:700;text-decoration:underline">Share feedback &rarr;</a></div>
 <h1>OIA Application Matrix <span style="font-size:14px;color:var(--mut);font-weight:400">· v0 · 2026-07-15</span></h1>
 <div class="sub">Where each application sits in the Open Intelligence Architecture stack. Click any application, or any filled cell, to drill down into the rationale, generate a gap-closing improvement prompt, and retest.</div>
 <div class="key" id="key"></div>

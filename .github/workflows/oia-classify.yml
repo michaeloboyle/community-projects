@@ -1,0 +1,88 @@
+name: OIA Classification
+
+# Dedicated, obviously-findable OIA eval run: for every pending submission (and
+# on demand) it classifies a repo and writes an inspectable pass/fail gate log
+# to the Actions tab, plus one durable JSON line to the committed attestation
+# log (data/rvf/attestation.jsonl). It is READ-ONLY on docs/data/oia-matrix.json,
+# so it can never overwrite or downgrade a human-reviewed curated `code ✓` row.
+# The matrix mutation + Pages deploy stays owned by pages.yml; this workflow only
+# produces the eval log and the audit trail.
+#
+# Security: triggers on untrusted, anyone-opened issues. The classifier does
+# GitHub-API reads only (no checkout or execution of the submitted repo) and
+# sanitizes untrusted text. No secrets are exposed to the eval step (only the
+# default GITHUB_TOKEN). Actions are pinned by full commit SHA.
+
+on:
+  issues:
+    types: [opened, labeled]
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "owner/name to (re)evaluate. Leave blank to backfill all curated repos into the attestation log."
+        required: false
+        type: string
+
+permissions:
+  contents: write   # append + commit the attestation log
+  issues: read      # read issue metadata from the event payload
+
+concurrency:
+  group: oia-classify-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    # Issue path is gated on the pending-review label; manual dispatch always runs.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issues' && contains(github.event.issue.labels.*.name, 'status:pending-review'))
+    steps:
+      - name: Checkout committee repo (scripts only; never the submitted repo)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: '20'
+
+      - name: OIA eval (issue submission)
+        if: github.event_name == 'issues'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: node scripts/oia-attest.mjs
+
+      - name: OIA eval (manual dispatch or backfill)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DISPATCH_REPO: ${{ inputs.repo }}
+        run: |
+          if [ -n "$DISPATCH_REPO" ]; then
+            node scripts/oia-attest.mjs "$DISPATCH_REPO"
+          else
+            node scripts/oia-attest.mjs --backfill-curated
+          fi
+
+      - name: Commit attestation log
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/rvf/attestation.jsonl
+          git diff --cached --quiet && { echo "no attestation change"; exit 0; }
+          # Retry loop to handle concurrent attestation appends (pages.yml,
+          # governance-agent.yml also commit-back to main).
+          for attempt in 1 2 3; do
+            git commit -m "oia-attest: eval log ${{ github.event_name == 'issues' && format('for issue #{0}', github.event.issue.number) || 'via dispatch' }} [skip ci]" || true
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" || {
+              git checkout --theirs data/rvf/attestation.jsonl || true
+              git add data/rvf/attestation.jsonl
+              git rebase --continue || true
+            }
+            git push && break
+            echo "push failed on attempt $attempt, retrying"
+            sleep $((attempt * 2))
+          done

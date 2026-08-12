@@ -888,5 +888,43 @@
       "status": "curated"
     }
   ],
-  "pending": []
+  "pending": [
+    {
+      "name": "bar181/aisp-open-core",
+      "desc": "AISP (AI Symbolic Programming) v5.1 AI first, spec driven development. A proof-carrying protocol LLMs understand nativel",
+      "layers": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0
+      ],
+      "spans": [
+        {
+          "label": "provenance",
+          "badge": "prov"
+        }
+      ],
+      "notes": {},
+      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 60 files; language n/a, pushed 2026-06-09. Centre of gravity none detected; presence L2, L5, L6, L7. This is a structural signal pass, NOT a comprehension read, and awaits committee review before promotion.",
+      "category": "app",
+      "evidence": {
+        "t": "auto",
+        "n": "Heuristic file-tree scan of 60 files on 2026-08-12: structural signals (real files, not just names), not comprehension. Qualification gate: issues ✓, docs ✓, ADRs ✗, PRD ✗, infographic ✗. Promote to code ✓ with a reader-agent audit and committee vote."
+      },
+      "gaps": [
+        "Committee: verify these auto-detected placements against the actual source (auto → code ✓).",
+        "Surface issue tracker + documentation + PRD/ADRs in the repo to meet the qualification gate.",
+        "Name the OIA layers/spans the project targets in its README."
+      ],
+      "status": "pending",
+      "submitted": "2026-08-12",
+      "issue": 44
+    }
+  ]
 }

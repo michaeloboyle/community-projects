@@ -2,7 +2,12 @@ name: On Submission
 
 on:
   issues:
-    types: [opened]
+    # `labeled` is required: the project-submission template applies
+    # `status:pending-review` at creation, but that label is not reliably present
+    # in the `opened` event payload (GitHub race), so an `opened`-only trigger
+    # skips real submissions (observed on #44). Firing on `labeled` too catches
+    # the label when it lands; the guard + idempotency check keep it single-run.
+    types: [opened, labeled]
 
 permissions:
   issues: write
@@ -10,13 +15,28 @@ permissions:
 jobs:
   triage:
     runs-on: ubuntu-latest
-    if: contains(github.event.issue.labels.*.name, 'status:pending-review')
+    if: >-
+      (github.event.action == 'labeled' && github.event.label.name == 'status:pending-review') ||
+      (github.event.action == 'opened' && contains(github.event.issue.labels.*.name, 'status:pending-review'))
     steps:
       - name: Extract category and apply label
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
         with:
           script: |
             const body = context.payload.issue.body || '';
+
+            // Idempotency: `opened` and `labeled` can both fire for one submission.
+            // If the automated welcome is already posted, do nothing.
+            const WELCOME_MARKER = 'automated message from the Agentics Foundation Open Source Committee intake system';
+            const existing = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            if (existing.some(c => (c.body || '').includes(WELCOME_MARKER))) {
+              core.info('Welcome already posted; skipping (idempotent).');
+              return;
+            }
 
             // SEC-007: Sanitize user input before embedding in comments
             function sanitize(input, maxLen = 100) {

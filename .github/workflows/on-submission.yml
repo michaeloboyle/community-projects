@@ -2,17 +2,67 @@ name: On Submission
 
 on:
   issues:
-    # `labeled` is required: the project-submission template applies
-    # `status:pending-review` at creation, but that label is not reliably present
-    # in the `opened` event payload (GitHub race), so an `opened`-only trigger
-    # skips real submissions (observed on #44). Firing on `labeled` too catches
-    # the label when it lands; the guard + idempotency check keep it single-run.
+    # `labeled` is required: every downstream step is gated on
+    # `status:pending-review`, and that label does not arrive with the `opened`
+    # event. Firing on `labeled` too catches it whenever it lands; the guard +
+    # idempotency check keep it single-run.
     types: [opened, labeled]
 
 permissions:
   issues: write
 
 jobs:
+  # The project-submission template declares labels: ["status:pending-review"],
+  # but GitHub applies issue-form labels only for authors who already have
+  # permission to label. Outside submitters do not, so the label is dropped
+  # silently. RobLe3 diagnosed this on #51/#52/#53 on 2026-08-21: "GitHub
+  # ignored the template label because the submitting account does not have
+  # triage permission here."
+  #
+  # Confirmed against the issue events API 2026-09-22: on #44, #51, #52, #53 and
+  # #55 the first `labeled` event is the chair applying it by hand, from 6
+  # minutes to 2 days after creation (#44, the only outside submitter, waited two
+  # days). Control: Dependabot's #33 carries a creation-time label event, so the
+  # API does record them; their absence here is real.
+  #
+  # Consequence: intake was never self-service for the population it exists to
+  # serve. Every submission sat inert until a human labelled it, because every
+  # workflow here is gated on that label.
+  #
+  # So apply the label ourselves. This job recognises a submission by the
+  # required headings the issue form renders, and adds `status:pending-review`,
+  # which then fires the `labeled` event the rest of the pipeline listens for.
+  # It does not classify, score, or decide anything (AF-GOV-002).
+  autolabel:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.action == 'opened' &&
+      !contains(github.event.issue.labels.*.name, 'status:pending-review')
+    steps:
+      - name: Apply status:pending-review to a submission-form issue
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
+        with:
+          script: |
+            const body = context.payload.issue.body || '';
+
+            // The two REQUIRED fields of the project-submission form. Both must
+            // be present, so an ordinary issue that happens to mention a repo
+            // URL is not mistaken for a submission.
+            const REQUIRED_HEADINGS = ['### Repository URL', '### Submission Category'];
+            const missing = REQUIRED_HEADINGS.filter(h => !body.includes(h));
+            if (missing.length) {
+              core.info(`Not a project-submission form issue (missing: ${missing.join(', ')}); leaving unlabelled.`);
+              return;
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['status:pending-review'],
+            });
+            core.info('Applied status:pending-review; the labeled event now drives intake.');
+
   triage:
     runs-on: ubuntu-latest
     if: >-

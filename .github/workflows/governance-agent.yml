@@ -12,18 +12,43 @@ on:
   schedule:
     - cron: '0 9 * * 1'   # Weekly Monday 9am UTC -- project health monitoring
     - cron: '0 0 1 * *'   # Monthly 1st midnight UTC -- GDoc drift detection
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Queue monitor: report only, post no reminder comments'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
   issues: write
 
 env:
+  # Fallback only. The three vote workflows and the queue monitor all derive
+  # quorum from data/committee-config.json and reach this value only when that
+  # file is unreadable. With the live 6-member roster the derived quorum is 4.
   QUORUM: '3'
   COI_GRAPH_PATH: data/rvf/graph.json
   EMBEDDINGS_PATH: data/rvf/embeddings.json
   ATTESTATION_PATH: data/rvf/attestation.jsonl
   APPROVED_PROJECTS_PATH: data/approved-projects.json
+  # Governs APPROVED projects: how long an approved repo may go without a
+  # commit before it is flagged. It does NOT govern the intake queue.
   STALE_THRESHOLD_DAYS: '90'
+  # Governs the INTAKE QUEUE: how long a submission may await scores before the
+  # queue monitor flags and chases it. Deliberately far shorter than the
+  # approved-project threshold. At 90 days the five submissions pending on
+  # 2026-09-28 (oldest 49 days) would all still have been invisible.
+  QUEUE_STALE_DAYS: '14'
+  # Minimum days between reminders on the same submission, so the weekly cron
+  # cannot re-nag every Monday and train people to filter the notification.
+  CHASE_INTERVAL_DAYS: '7'
+  # Maximum reminders posted in a single run, oldest submission first.
+  # Uncapped, the first run against the 2026-09-28 backlog would have posted
+  # five reminders mentioning six people each: thirty notifications at once, as
+  # the committee's first contact with this system. Deferred submissions are
+  # logged, not dropped, and are picked up on subsequent runs.
+  MAX_CHASES_PER_RUN: '2'
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -455,6 +480,20 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+            // github-script resolves a bare relative require against its own
+            // action directory, not the checked-out repo, so address lib/ by
+            // absolute workspace path.
+            const queueHealth = require(
+              `${process.env.GITHUB_WORKSPACE}/lib/queue-health.js`
+            );
+            let committeeConfig = null;
+            try {
+              committeeConfig = JSON.parse(
+                fs.readFileSync('data/committee-config.json', 'utf8')
+              );
+            } catch (e) {
+              core.warning(`committee-config unreadable, quorum falls back to env: ${e.message}`);
+            }
             const comment = context.payload.comment.body.trim();
             const actor = context.payload.comment.user.login;
             const issueNumber = context.issue.number;
@@ -739,7 +778,15 @@ jobs:
                 );
               }
               if (labels.includes('status:scoring')) {
-                const quorum = parseInt(process.env.QUORUM || '3');
+                // Derive quorum from the roster, exactly as escalation-vote,
+                // validation-vote and retraction do. Reading the raw QUORUM env
+                // here made `/status` report 3 while those three enforced 4 on
+                // the same 6-member roster, so the report under-stated how many
+                // scores were outstanding.
+                const quorum = queueHealth.deriveQuorum(
+                  committeeConfig,
+                  process.env.QUORUM
+                );
                 const needed = quorum - scoreComments.length;
                 if (needed > 0) {
                   pendingActions.push(
@@ -1521,3 +1568,169 @@ jobs:
           git commit -m "Drift detection: update GDoc section hashes"
           git pull --rebase origin main
           git push
+
+  # ---------------------------------------------------------------------------
+  # Job 5: Queue Monitor
+  #
+  # Instruments the phase between intake and approval, which had no sensor.
+  #
+  # weekly-monitor above watches APPROVED projects and returns early when
+  # approved-projects.json holds no active entries, which is the steady state
+  # before the first approval. So on 2026-09-28, with five submissions awaiting
+  # scores for up to 49 days and zero approvals ever, the scheduled governance
+  # run completed successfully every week with nothing to report.
+  #
+  # This job reports three things and chases one:
+  #   1. Submissions awaiting scores past QUEUE_STALE_DAYS.
+  #   2. Submissions carrying no case brief. The brief is the only artifact
+  #      that @mentions eligible scorers, and only 2 of 6 committee members
+  #      watch this repository, so a missing brief means the committee was
+  #      never notified the submission exists.
+  #   3. Which eligible scorers are individually outstanding.
+  # It then posts one reminder per stale submission, rate-limited by
+  # CHASE_INTERVAL_DAYS.
+  #
+  # Reminders are suppressed entirely on workflow_dispatch unless dry_run is
+  # set to false, so the report can be inspected before anyone is @mentioned.
+  # ---------------------------------------------------------------------------
+  queue-monitor:
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '0 9 * * 1') ||
+      github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Monitor intake queue
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        with:
+          script: |
+            const fs = require('fs');
+            const qh = require(`${process.env.GITHUB_WORKSPACE}/lib/queue-health.js`);
+
+            const now = Date.now();
+            const thresholdDays = parseInt(process.env.QUEUE_STALE_DAYS || '14', 10);
+            const intervalDays = parseInt(process.env.CHASE_INTERVAL_DAYS || '7', 10);
+            const dryRun = String(process.env.DRY_RUN) === 'true';
+
+            let config = null;
+            try {
+              config = JSON.parse(fs.readFileSync('data/committee-config.json', 'utf8'));
+            } catch (e) {
+              core.warning(`committee-config unreadable: ${e.message}`);
+            }
+            const quorum = qh.deriveQuorum(config, process.env.QUORUM);
+
+            // Pull every open issue, then filter locally. Label filtering is
+            // done by the library so the selection rules (PR exclusion, closed
+            // exclusion, pending-review OR scoring) stay under test.
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+
+            const awaiting = qh.awaitingScores(issues);
+            core.info(`${awaiting.length} submission(s) awaiting scores; quorum ${quorum}`);
+
+            // Comments are needed for brief detection, score tallies and chase
+            // idempotency. Fetch once per awaiting issue and reuse.
+            const commentsByIssue = new Map();
+            for (const issue of awaiting) {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                per_page: 100,
+              });
+              commentsByIssue.set(issue.number, comments);
+            }
+
+            const stale = qh.findStaleSubmissions(issues, { thresholdDays, now });
+            const unbriefed = qh.findUnbriefed(issues, commentsByIssue);
+            const unbriefedNumbers = new Set(unbriefed.map(i => i.number));
+
+            // Decorate for the report's score column.
+            for (const entry of stale) {
+              const comments = commentsByIssue.get(entry.issue.number) || [];
+              entry.issue.__received = qh.scorersWhoResponded(comments).length;
+            }
+
+            const report = qh.buildQueueReport({
+              stale,
+              unbriefed,
+              quorum,
+              thresholdDays,
+              totalAwaiting: awaiting.length,
+            });
+            await core.summary.addRaw(report).write();
+            core.info(report);
+
+            if (dryRun) {
+              core.notice('Dry run: no reminder comments posted.');
+              return;
+            }
+
+            // Decide first, then cap, so the cap consumes slots only for
+            // submissions that would actually have been reminded. Capping
+            // before deciding would waste a slot on an issue that turns out to
+            // be inside its reminder interval.
+            const due = [];
+            let skipped = 0;
+            for (const { issue, ageDays } of stale) {
+              const comments = commentsByIssue.get(issue.number) || [];
+              const submitter = issue.user ? issue.user.login : '';
+              const missing = qh.missingScorers(config, submitter, comments);
+              const decision = qh.shouldChase(comments, { missing, intervalDays, now });
+              if (!decision.chase) {
+                core.info(`#${issue.number}: no reminder (${decision.reason})`);
+                skipped++;
+                continue;
+              }
+              due.push({ issue, ageDays, comments, missing, reason: decision.reason });
+            }
+
+            // Least-recently-reminded first, NOT oldest-submission-first.
+            // Ordering by age lets the two oldest reclaim both slots on every
+            // run and starves everything below them indefinitely.
+            const maxPerRun = parseInt(process.env.MAX_CHASES_PER_RUN || '2', 10);
+            const { chase, deferred } = qh.capChases(
+              qh.prioritizeChases(due, now),
+              maxPerRun
+            );
+
+            // No silent truncation: say what was held back and why.
+            for (const d of deferred) {
+              core.info(
+                `#${d.issue.number}: due but deferred by MAX_CHASES_PER_RUN=${maxPerRun}; ` +
+                `will be picked up on a later run`
+              );
+            }
+
+            let posted = 0;
+            for (const { issue, ageDays, comments, missing, reason } of chase) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: qh.buildChaseComment({
+                  missing,
+                  ageDays,
+                  received: qh.scorersWhoResponded(comments).length,
+                  quorum,
+                  unbriefed: unbriefedNumbers.has(issue.number),
+                }),
+              });
+              core.info(`#${issue.number}: reminded ${missing.length} member(s) (${reason})`);
+              posted++;
+            }
+
+            core.notice(
+              `Queue monitor: ${awaiting.length} awaiting, ${stale.length} stale, ` +
+              `${unbriefed.length} never briefed, ${posted} reminded, ` +
+              `${deferred.length} deferred by cap, ${skipped} inside interval.`
+            );

@@ -15,6 +15,8 @@ name: QE release scan (advisory)
 on:
   schedule:
     - cron: '17 8 * * *'
+  push:
+    branches: [chair/listed-not-reviewed]   # TEMP: fork proof run; removed in the next commit
   workflow_dispatch:
     inputs:
       max:

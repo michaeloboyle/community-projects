@@ -1,7 +1,10 @@
 # PROBE ONLY (fork). Question: does Dragan Spiridonov's agentic-qe produce
 # usable scan output on a listed repo's latest release, keyless and at $0?
 name: Listing QE probe
-on: workflow_dispatch
+on:
+  push:
+    branches: [chair/listing-qe-probe]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

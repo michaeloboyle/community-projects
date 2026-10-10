@@ -1,0 +1,48 @@
+# PROBE ONLY (fork). Question: does Dragan Spiridonov's agentic-qe produce
+# usable scan output on a listed repo's latest release, keyless and at $0?
+name: Listing QE probe
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: [bar181/aisp-open-core, RobLe3/IICP, RobLe3/iicp-directory-rust, RobLe3/iicp-client-rust, michaeloboyle/iicp-node-monitor]
+    env:
+      # Deliberately keyless: no ANTHROPIC/OPENAI/OPENROUTER/GEMINI keys exist here.
+      DO_NOT_TRACK: '1'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Resolve the latest release (fall back to default branch)
+        id: ref
+        run: |
+          tag=$(gh api repos/${{ matrix.repo }}/releases/latest -q .tag_name 2>/dev/null || true)
+          [ -z "$tag" ] && tag=$(gh api repos/${{ matrix.repo }} -q .default_branch) && kind=branch || kind=release
+          echo "ref=$tag" >> "$GITHUB_OUTPUT"; echo "kind=$kind" >> "$GITHUB_OUTPUT"
+          echo "${{ matrix.repo }} -> $kind $tag"
+      - uses: actions/checkout@v6
+        with:
+          repository: ${{ matrix.repo }}
+          ref: ${{ steps.ref.outputs.ref }}
+          path: target
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with: { node-version: 22 }
+      - name: aqe security --sast (pinned 3.15.0)
+        run: npx -y agentic-qe@3.15.0 security --sast -t target -F json -o sast.json || echo "exit=$?"
+      - name: aqe quality (pinned 3.15.0)
+        run: (cd target && npx -y agentic-qe@3.15.0 quality -F json -o ../quality.json) || echo "exit=$?"
+      - name: Summarise
+        run: |
+          for f in sast.json quality.json; do echo "== $f"; [ -f $f ] && head -c 1500 $f || echo MISSING; echo; done
+      - name: Keep results
+        if: always()
+        run: |
+          n=$(echo '${{ matrix.repo }}' | tr '/' '_'); mkdir -p out; cp sast.json quality.json out/ 2>/dev/null || true
+          echo "NAME=$n" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with: { name: 'qe-${{ env.NAME }}', path: out }

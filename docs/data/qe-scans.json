@@ -1,1 +1,98 @@
-{}
+{
+  "ruvnet/hackerone": {
+    "repo": "ruvnet/hackerone",
+    "ref": "main",
+    "kind": "branch",
+    "tool": "agentic-qe@3.15.0",
+    "scanned_at": "2026-10-10T03:36:33.614Z",
+    "status": "complete",
+    "files_scanned": 36,
+    "files_requested": 36,
+    "findings": 3,
+    "advisory": true
+  },
+  "ruvnet/helix": {
+    "repo": "ruvnet/helix",
+    "ref": "main",
+    "kind": "branch",
+    "tool": "agentic-qe@3.15.0",
+    "scanned_at": "2026-10-10T03:36:12.325Z",
+    "status": "partial",
+    "files_scanned": 11,
+    "files_requested": 70,
+    "findings": 39,
+    "advisory": true
+  },
+  "ruvnet/llamastack": {
+    "repo": "ruvnet/llamastack",
+    "ref": "main",
+    "kind": "branch",
+    "tool": "agentic-qe@3.15.0",
+    "scanned_at": "2026-10-10T03:36:51.561Z",
+    "status": "partial",
+    "files_scanned": 177,
+    "files_requested": 178,
+    "findings": 1,
+    "advisory": true
+  },
+  "ruvnet/metaharness": {
+    "repo": "ruvnet/metaharness",
+    "ref": "v0.4.17",
+    "kind": "release",
+    "tool": "agentic-qe@3.15.0",
+    "scanned_at": "2026-10-10T03:36:08.456Z",
+    "status": "partial",
+    "files_scanned": 1211,
+    "files_requested": 1309,
+    "findings": 327,
+    "advisory": true
+  },
+  "ruvnet/ruflo": {
+    "repo": "ruvnet/ruflo",
+    "ref": "v3.56.3",
+    "kind": "release",
+    "tool": "agentic-qe@3.15.0",
+    "scanned_at": "2026-10-10T03:36:22.111Z",
+    "status": "partial",
+    "files_scanned": 3964,
+    "files_requested": 4010,
+    "findings": 954,
+    "advisory": true
+  },
+  "ruvnet/rupixel": {
+    "repo": "ruvnet/rupixel",
+    "ref": "main",
+    "kind": "branch",
+    "tool": "agentic-qe@3.15.0",
+    "scanned_at": "2026-10-10T03:36:40.828Z",
+    "status": "partial",
+    "files_scanned": 8,
+    "files_requested": 23,
+    "findings": 10,
+    "advisory": true
+  },
+  "ruvnet/ruv-neural": {
+    "repo": "ruvnet/ruv-neural",
+    "ref": "main",
+    "kind": "branch",
+    "tool": "agentic-qe@3.15.0",
+    "scanned_at": "2026-10-10T03:36:16.770Z",
+    "status": "partial",
+    "files_scanned": 26,
+    "files_requested": 199,
+    "findings": 0,
+    "advisory": true
+  },
+  "ruvnet/ruvn": {
+    "repo": "ruvnet/ruvn",
+    "ref": "master",
+    "kind": "branch",
+    "tool": "agentic-qe@3.15.0",
+    "scanned_at": "2026-10-10T03:36:45.793Z",
+    "status": "complete",
+    "files_scanned": 11,
+    "files_requested": 11,
+    "findings": 0,
+    "advisory": true
+  }
+}

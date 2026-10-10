@@ -147,7 +147,8 @@ conditions; 11-15 defer or request clarification; 0-10 decline.
 
 ## 7. Decision and Voting Model
 
-All submissions are reviewed during scheduled committee meetings. Two sequential
+All submissions are reviewed during scheduled committee meetings, except Website
+Listing submissions that qualify for the automated track in Section 7a. Two sequential
 votes govern each submission, each decided by a simple majority (50% + 1) of
 voting members present (governance doc Sections 6 and 7).
 
@@ -178,6 +179,35 @@ quorum. Two mechanisms apply: submitter exclusion is mechanical (the intake
 system bars the submitter from voting on their own submission and its retraction),
 and `/coi` is voluntary (non-submitting members declare their own conflicts; the
 committee never auto-recuses a non-submitter).
+
+## 7a. Website Listing: Automated Track
+
+Reviewer participation is not a precondition for a Website Listing. A listing is
+a visibility decision, the lowest-stakes category, and it is reversible through
+retraction (Section 8). For that category only, the committee exercises its
+judgment once, by adopting a published standard, and agents apply it.
+
+- **Scope.** Website Listing submissions only. Donations, co-founder search,
+  problem support, and any submission that meets an automatic escalation trigger
+  (Section 7) never take this track.
+- **Listing Standard.** The checks live in
+  `docs/operating-guidelines/listing-standard.md`, versioned by pull request. The
+  committee adopts each version by majority vote (Section 7).
+- **Automatic listing.** A submission that passes every blocking check in the
+  current standard is listed after a 7-day objection window, with no score or
+  vote required. Scores and endorsements are optional; when given, they appear
+  on the listing.
+- **Hold.** During the window, any one committee member may comment `/hold` to
+  move the submission to the two-vote path. A hold needs no reason and no
+  second.
+- **Conflicts.** A submission from a committee member, including the Chair,
+  never takes the automated track.
+- **Per-release scans.** Each new release of a listed repository is scanned
+  under the standard. A regression publishes a quality advisory on the listing.
+  It does not delist. Retraction stays a human decision under Section 8.
+- **Calibration before blocking.** A check may become blocking only after it
+  shows its false-positive rate and coverage on a labelled sample, recorded with
+  the pull request that promotes it. Until then it is advisory.
 
 ## 8. Retraction Authority
 
@@ -266,7 +296,10 @@ framing).
 
 **Humans judge, agents execute** (AF-GOV-002). Automation handles analysis,
 logistics, triage, case preparation, and infrastructure. Committee members cast
-every vote and make every escalation, approval, and retraction decision. Agents
+every vote and make every escalation and retraction decision, and every approval
+decision outside the automated listing track. Within that track (Section 7a), the
+committee judges by adopting and amending the Listing Standard, and agents apply
+it. Agents
 never cast votes, decide escalation, or propose retraction. The committee's human
 judgment is the point; tooling exists to make that judgment efficient and
 well-informed.

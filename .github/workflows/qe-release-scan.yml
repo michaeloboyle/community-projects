@@ -1,0 +1,125 @@
+name: QE release scan (advisory)
+
+# Scans each repository listed in the OIA Application Matrix when it publishes a
+# new release (repos with no releases: default branch, at most every 30 days),
+# using Dragan Spiridonov's agentic-qe, pinned. ADVISORY: results never gate a
+# listing. See scripts/qe-scan.mjs for why.
+#
+# Security: this is the ONE workflow that checks out a listed repository. It is
+# read as files only and never built, installed or executed; only `aqe security
+# --sast` runs, and it reads source text. The scan job has a read-only token,
+# no secrets and no LLM provider keys (so agentic-qe makes no model calls and
+# costs $0). Only the separate `record` job can write, and it never touches the
+# scanned code; it receives summaries as artifacts.
+
+on:
+  schedule:
+    - cron: '17 8 * * *'
+  workflow_dispatch:
+    inputs:
+      max:
+        description: "Max repositories to scan this run"
+        required: false
+        default: '8'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qe-release-scan
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.plan.outputs.targets }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: '22'
+      - id: plan
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MAX: ${{ inputs.max || '8' }}
+        run: echo "targets=$(node scripts/qe-scan.mjs plan "$MAX")" >> "$GITHUB_OUTPUT"
+
+  scan:
+    needs: plan
+    if: needs.plan.outputs.targets != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        target: ${{ fromJSON(needs.plan.outputs.targets) }}
+    env:
+      DO_NOT_TRACK: '1'
+    steps:
+      - name: Checkout committee repo (scripts only)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          path: committee
+          persist-credentials: false
+      - name: Checkout the listed repository as files (never executed)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: ${{ matrix.target.repo }}
+          ref: ${{ matrix.target.ref }}
+          path: target
+          persist-credentials: false
+          submodules: false
+          lfs: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: '22'
+      - name: agentic-qe SAST (pinned, keyless)
+        run: npx -y agentic-qe@3.15.0 security --sast -t target -F json -o sast.json || echo "aqe exit $? (non-zero is expected when it reports findings)"
+      - name: Summarise (counts only; no paths, types or severities)
+        env:
+          REPO: ${{ matrix.target.repo }}
+          REF: ${{ matrix.target.ref }}
+          KIND: ${{ matrix.target.kind }}
+        run: |
+          mkdir -p out
+          node committee/scripts/qe-scan.mjs summarise "$REPO" "$REF" "$KIND" sast.json out/record.json
+          cat out/record.json
+          [ -f sast.json ] && cp sast.json out/sast-full.json || true
+          echo "ART=$(echo "$REPO" | tr '/' '_')" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: qe-${{ env.ART }}
+          path: out
+          retention-days: 30
+
+  record:
+    needs: scan
+    if: always() && needs.scan.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with:
+          pattern: qe-*
+          path: records
+      - name: Merge summaries (record.json only; the full scanner output is not committed)
+        run: node scripts/qe-scan.mjs merge records
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/data/qe-scans.json
+          git diff --cached --quiet && { echo "no change"; exit 0; }
+          git commit -m "qe-scan: advisory release scans [skip ci]"
+          for attempt in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push && exit 0
+            sleep $((attempt * 5))
+          done
+          echo "push failed after 3 attempts"; exit 1

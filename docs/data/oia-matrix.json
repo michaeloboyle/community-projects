@@ -911,7 +911,7 @@
         }
       ],
       "notes": {},
-      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 60 files; language n/a, pushed 2026-06-09. Centre of gravity none detected; presence L2, L5, L6, L7. This is a structural signal pass, NOT a comprehension read, and awaits committee review before promotion.",
+      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 60 files; language n/a, pushed 2026-06-09. Centre of gravity none detected; presence L2, L5, L6, L7. This is a structural signal pass, NOT a comprehension read, and committee review is optional.",
       "category": "app",
       "evidence": {
         "t": "auto",
@@ -966,7 +966,7 @@
       "notes": {
         "5": "signal-detected centre of gravity (Inference & Retrieval)"
       },
-      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 595 project files (13 scaffolding paths excluded); language Python, pushed 2026-09-25. Centre of gravity L5; presence L2, L3, L6, L7, L8. This is a structural signal pass, NOT a comprehension read, and awaits committee review before promotion.",
+      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 595 project files (13 scaffolding paths excluded); language Python, pushed 2026-09-25. Centre of gravity L5; presence L2, L3, L6, L7, L8. This is a structural signal pass, NOT a comprehension read, and committee review is optional.",
       "category": "app",
       "evidence": {
         "t": "auto",
@@ -1014,7 +1014,7 @@
         "5": "signal-detected centre of gravity (Inference & Retrieval)",
         "7": "signal-detected centre of gravity (Orchestration & Workflow)"
       },
-      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 15 project files (2 scaffolding paths excluded); language Python, pushed 2026-08-31. Centre of gravity L5, L7; presence L2, L8. This is a structural signal pass, NOT a comprehension read, and awaits committee review before promotion.",
+      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 15 project files (2 scaffolding paths excluded); language Python, pushed 2026-08-31. Centre of gravity L5, L7; presence L2, L8. This is a structural signal pass, NOT a comprehension read, and committee review is optional.",
       "category": "app",
       "evidence": {
         "t": "auto",
@@ -1070,7 +1070,7 @@
         "7": "signal-detected centre of gravity (Orchestration & Workflow)",
         "8": "signal-detected centre of gravity (Continuity Fabric)"
       },
-      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 232 project files (12 scaffolding paths excluded); language Rust, pushed 2026-09-26. Centre of gravity L7, L8; presence L2, L3, L5. This is a structural signal pass, NOT a comprehension read, and awaits committee review before promotion.",
+      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 232 project files (12 scaffolding paths excluded); language Rust, pushed 2026-09-26. Centre of gravity L7, L8; presence L2, L3, L5. This is a structural signal pass, NOT a comprehension read, and committee review is optional.",
       "category": "app",
       "evidence": {
         "t": "auto",
@@ -1122,7 +1122,7 @@
         "5": "signal-detected centre of gravity (Inference & Retrieval)",
         "7": "signal-detected centre of gravity (Orchestration & Workflow)"
       },
-      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 248 project files (13 scaffolding paths excluded); language Rust, pushed 2026-09-18. Centre of gravity L5, L7; presence L2, L3, L6, L8, L9. This is a structural signal pass, NOT a comprehension read, and awaits committee review before promotion.",
+      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 248 project files (13 scaffolding paths excluded); language Rust, pushed 2026-09-18. Centre of gravity L5, L7; presence L2, L3, L6, L8, L9. This is a structural signal pass, NOT a comprehension read, and committee review is optional.",
       "category": "app",
       "evidence": {
         "t": "auto",
@@ -1183,7 +1183,7 @@
         "7": "signal-detected centre of gravity (Orchestration & Workflow)",
         "9": "signal-detected centre of gravity (Human & Browser Interface)"
       },
-      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 6000 of 12397 project files (58 scaffolding paths excluded; 6397 beyond the 6000-file scan cap, not read); language Python, pushed 2026-09-25. Centre of gravity L2, L3, L4, L5, L6, L7, L9; presence none. This is a structural signal pass, NOT a comprehension read, and awaits committee review before promotion.",
+      "narrative": "Auto-classified from a submission. Heuristic file-tree scan of 6000 of 12397 project files (58 scaffolding paths excluded; 6397 beyond the 6000-file scan cap, not read); language Python, pushed 2026-09-25. Centre of gravity L2, L3, L4, L5, L6, L7, L9; presence none. This is a structural signal pass, NOT a comprehension read, and committee review is optional.",
       "category": "app",
       "evidence": {
         "t": "auto",

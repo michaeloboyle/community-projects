@@ -12,12 +12,13 @@ const SURFACES = [
   'docs/data/oia-matrix.json',
   'scripts/extract-oia-matrix.mjs',
   'scripts/oia-intake-step.mjs',
+  'scripts/classify-oia.mjs',
   '.github/ISSUE_TEMPLATE/project-submission.yml',
 ];
 
 test('no reader-facing surface frames a listing as waiting for promotion', () => {
   for (const p of SURFACES) {
-    assert.doesNotMatch(read(p), /awaiting (committee )?promotion|before it is promoted/i, p);
+    assert.doesNotMatch(read(p), /awaiting (committee )?promotion|before (it is )?promot|under <b>pending review/i, p);
   }
 });
 

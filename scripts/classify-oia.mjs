@@ -57,7 +57,7 @@ export async function classify(name,issue,submitted){
   layers,
   spans,
   notes,
-  narrative:`Auto-classified from a submission. Heuristic file-tree scan of ${scanScope} project files${scanNote}; language ${meta.language||'n/a'}, pushed ${(meta.pushed_at||'').slice(0,10)}. Centre of gravity ${cog.join(', ')||'none detected'}; presence ${pres.join(', ')||'none'}. This is a structural signal pass, NOT a comprehension read, and awaits committee review before promotion.`,
+  narrative:`Auto-classified from a submission. Heuristic file-tree scan of ${scanScope} project files${scanNote}; language ${meta.language||'n/a'}, pushed ${(meta.pushed_at||'').slice(0,10)}. Centre of gravity ${cog.join(', ')||'none detected'}; presence ${pres.join(', ')||'none'}. This is a structural signal pass, NOT a comprehension read, and committee review is optional.`,
   category:'app',
   evidence:{t:'auto',n:`Heuristic file-tree scan of ${scanScope} project files on ${submitted||'submission'}${scanNote}: structural signals (real files, not just names), not comprehension. Qualification gate: ${gateStr}. Promote to code ✓ with a reader-agent audit and committee vote.`},
   gaps:['Committee: verify these auto-detected placements against the actual source (auto → code ✓).','Surface issue tracker + documentation + PRD/ADRs in the repo to meet the qualification gate.','Name the OIA layers/spans the project targets in its README.'],

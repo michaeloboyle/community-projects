@@ -112,7 +112,7 @@ tr.pending td.app{box-shadow:inset 3px 0 0 #3e9bff}
   <span><b class="state" style="color:var(--o)">L3 · L8</b> = state-holding layers</span>
   <span><span class="badge code">code ✓</span> verified in code &nbsp; <span class="badge desc">desc</span> description only &nbsp; <span class="badge warn">desc ⚠</span> code differs</span>
 </div>
-<div style="margin:2px 0 16px"><a class="submit-btn" href="https://github.com/agenticsorg/community-projects/issues/new?template=project-submission.yml" target="_blank" rel="noopener noreferrer">+ Submit a repo for consideration</a> <span style="color:var(--mut);font-size:12px">Sign in to GitHub to submit. A committee workflow auto-classifies it and adds it to the matrix under <b>pending review</b>.</span></div>
+<div style="margin:2px 0 16px"><a class="submit-btn" href="https://github.com/agenticsorg/community-projects/issues/new?template=project-submission.yml" target="_blank" rel="noopener noreferrer">+ Submit a repo for consideration</a> <span style="color:var(--mut);font-size:12px">Sign in to GitHub to submit. A committee workflow auto-classifies it and lists it in the matrix right away, marked <b>not yet reviewed</b>. Committee review is optional.</span></div>
 <div class="wrap"><table id="t"><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table></div>
 
 <p style="color:var(--mut);font-size:13px;margin:10px 2px">Click any row to expand its rationale, gap prompt, and rescan inline. Click again to collapse.</p>
@@ -146,7 +146,9 @@ tr.pending td.app{box-shadow:inset 3px 0 0 #3e9bff}
      button and the intake workflow can never drift apart. -->
 <script type="module">
  import * as OIA from "./oia-signals.mjs";
+ import { qeAdvisoryText } from "./qe-advisory.mjs";
  window.OIA_SIGNALS = OIA;
+ window.QE_TEXT = qeAdvisoryText;
 </script>
 <script>
 const layers=[["L0","Physical Compute"],["L1","Silicon Abstraction"],["L2","Sovereign Infrastructure"],["L3","Agent Data Substrate"],["L4","Model Training & Adaptation"],["L5","Inference & Retrieval"],["L6","Context & Knowledge"],["L7","Orchestration & Workflow"],["L8","Continuity Fabric"],["L9","Human & Browser Interface"]];
@@ -155,7 +157,7 @@ const STATE={3:1,8:1};
 // pending = listed, not yet reviewed: auto-classified from a submission). The internal apps[]/EVID/GAPS
 // shapes are rebuilt from that JSON so all render/drill-down/rescan logic below is unchanged.
 // apps tuple: [name, desc, [L0..L9], [[span,cls]...], whyByLayerIndex{}, opsNote, kind ("app"|"infra")]
-let apps=[], EVID={}, GAPS={}, SUBMETA={};
+let apps=[], EVID={}, GAPS={}, SUBMETA={}, QE={};
 function slug(n){return 'oia-'+String(n).replace(/[^a-z0-9]+/gi,'-').toLowerCase();}
 function evOf(name){return EVID[name]||{t:"desc",n:"Classified from the repo description/README only. Not yet verified against code."};}
 const EVLBL={code:"code ✓",warn:"desc ⚠",desc:"desc",auto:"auto ⟳"};
@@ -270,6 +272,7 @@ function pick(i,focus){
    `<div class="mrow"><b>Strongest spans:</b> ${spans}</div>`+
    `<div class="mrow"><b>Operational read (metaharness lens):</b> ${a[5]}</div>`+
    `<div class="mrow"><b>Evidence tier:</b> <span class="badge ${evOf(a[0]).t}">${EVLBL[evOf(a[0]).t]}</span> ${evOf(a[0]).n}</div>`+
+   (window.QE_TEXT?`<div class="mrow">${window.QE_TEXT(QE[a[0]])}</div>`:'')+
    `<div class="mrow"><b>README badge</b> — links back to this row: <img src="${badgeUrl}" alt="OIA badge" style="vertical-align:middle;height:20px" onerror="this.style.display='none'"></div>`+
    `<div><textarea class="embed" readonly onclick="this.select()">${embed}</textarea></div>`+
    `<div class="acts"><button onclick="genPrompt('${a[0]}')">Generate improvement prompt →</button> <button class="ghost" onclick="retest('${a[0]}')">Rescan repo (client-side) ↻</button></div>`+
@@ -289,6 +292,8 @@ async function init(){
   const d=await r.json();
   apps=[];EVID={};GAPS={};SUBMETA={};
   ingest(d.curated,'curated'); ingest(d.pending,'pending');
+  // Advisory per-release QE scans. Optional: the matrix renders without them.
+  try{const q=await fetch('data/qe-scans.json',{cache:'no-store'}); QE=q.ok?await q.json():{};}catch(_){QE={};}
   render(); handleHash();
  }catch(e){
   document.getElementById('body').innerHTML=`<tr><td colspan="12" style="text-align:left;padding:14px">Failed to load matrix data (${e}). Expected <code>data/oia-matrix.json</code>.</td></tr>`;

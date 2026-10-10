@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        repo: [bar181/aisp-open-core, RobLe3/IICP, RobLe3/iicp-directory-rust, RobLe3/iicp-client-rust, michaeloboyle/iicp-node-monitor]
+        repo: [bar181/aisp-open-core, michaeloboyle/iicp-node-monitor]
     env:
       # Deliberately keyless: no ANTHROPIC/OPENAI/OPENROUTER/GEMINI keys exist here.
       DO_NOT_TRACK: '1'
@@ -22,8 +22,8 @@ jobs:
       - name: Resolve the latest release (fall back to default branch)
         id: ref
         run: |
-          tag=$(gh api repos/${{ matrix.repo }}/releases/latest -q .tag_name 2>/dev/null || true)
-          [ -z "$tag" ] && tag=$(gh api repos/${{ matrix.repo }} -q .default_branch) && kind=branch || kind=release
+          if tag=$(gh api repos/${{ matrix.repo }}/releases/latest -q .tag_name 2>/dev/null) && [ -n "$tag" ]; then kind=release
+          else tag=$(gh api repos/${{ matrix.repo }} -q .default_branch); kind=branch; fi
           echo "ref=$tag" >> "$GITHUB_OUTPUT"; echo "kind=$kind" >> "$GITHUB_OUTPUT"
           echo "${{ matrix.repo }} -> $kind $tag"
       - uses: actions/checkout@v6

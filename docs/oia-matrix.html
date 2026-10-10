@@ -152,7 +152,7 @@ tr.pending td.app{box-shadow:inset 3px 0 0 #3e9bff}
 const layers=[["L0","Physical Compute"],["L1","Silicon Abstraction"],["L2","Sovereign Infrastructure"],["L3","Agent Data Substrate"],["L4","Model Training & Adaptation"],["L5","Inference & Retrieval"],["L6","Context & Knowledge"],["L7","Orchestration & Workflow"],["L8","Continuity Fabric"],["L9","Human & Browser Interface"]];
 const STATE={3:1,8:1};
 // Matrix data is loaded from data/oia-matrix.json at runtime (curated = committee-reviewed,
-// pending = auto-classified from a submission awaiting promotion). The internal apps[]/EVID/GAPS
+// pending = listed, not yet reviewed: auto-classified from a submission). The internal apps[]/EVID/GAPS
 // shapes are rebuilt from that JSON so all render/drill-down/rescan logic below is unchanged.
 // apps tuple: [name, desc, [L0..L9], [[span,cls]...], whyByLayerIndex{}, opsNote, kind ("app"|"infra")]
 let apps=[], EVID={}, GAPS={}, SUBMETA={};
@@ -237,7 +237,7 @@ function render(){
   const st=(SUBMETA[a[0]]||{}).status, prev=i>0?apps[i-1]:null, pst=prev?(SUBMETA[prev[0]]||{}).status:null;
   let div='';
   if(st==='pending' && pst!=='pending'){
-   div=`<tr class="grp pend"><td colspan="12">Pending review — auto-classified from a submission (desc/auto tier), awaiting committee promotion</td></tr>`;
+   div=`<tr class="grp pend"><td colspan="12">Listed, not yet reviewed. Auto-classified from a submission (desc/auto tier). Committee review is optional and moves a row into the reviewed set above.</td></tr>`;
   }else if(st!=='pending' && i>0 && a[6]==='infra' && prev[6]==='app' && pst!=='pending'){
    div=`<tr class="grp"><td colspan="12">Infrastructure / content / meta — not intelligence applications (the OIA lens collapses them to L9 or flags out-of-scope)</td></tr>`;
   }

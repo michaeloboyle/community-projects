@@ -10,8 +10,9 @@ body:
 
         Any GitHub user may submit a public repository for consideration. Submitting
         this form (you must be signed in to GitHub) auto-classifies the repo into the
-        OIA Application Matrix under **pending review**, and posts you a README badge.
-        The committee then reviews the placement before it is promoted to the curated matrix.
+        OIA Application Matrix, listed as **not yet reviewed**, and posts you a README badge.
+        Your listing is live from that point. Committee review is optional; when it
+        happens, the row moves into the curated, reviewed set.
 
         Please complete all required fields below.
 

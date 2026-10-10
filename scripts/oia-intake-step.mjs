@@ -119,12 +119,12 @@ async function main(){
    const embed=(out.match(/EMBED=(.+)/)||[,''])[1];
    const row=(out.match(/ROW=(.+)/)||[,''])[1];
    await comment([
-    '### Added to the OIA Application Matrix (pending review)','',
-    `\`${name}\` has been auto-classified into the **pending review** band. Evidence tier is \`auto ⟳\` — heuristic structural signals, not a code audit — and awaits committee review.`,'',
+    '### Added to the OIA Application Matrix (listed, not yet reviewed)','',
+    `\`${name}\` has been auto-classified and is now **listed** in the matrix, marked not yet reviewed. Evidence tier is \`auto ⟳\`: heuristic structural signals, not a code audit. Committee review is optional; it adds the reviewed mark.`,'',
     `**Your row:** ${row}`,'',
     '**Add this badge to your README** (it links back to your matrix row):','',
     '```markdown',embed,'```','',
-    'On committee approval (label `status:approved`), the row moves into the curated matrix.'
+    'If the committee reviews and approves it (label `status:approved`), the row moves into the curated, reviewed set.'
    ].join('\n'), PENDING_MARKER);
    process.exit(0);
   }

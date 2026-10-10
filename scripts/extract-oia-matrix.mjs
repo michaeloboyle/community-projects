@@ -37,7 +37,7 @@ const curated = apps.map(a => {
 
 const out = {
   schema_version: 1,
-  generated_note: 'Curated entries are committee-reviewed. Pending entries are auto-classified from a submission (desc tier) and awaiting committee promotion.',
+  generated_note: 'Curated entries are committee-reviewed. Pending entries are listed, not yet reviewed: auto-classified from a submission (desc tier). Committee review is optional and adds the curated mark.',
   layers,                             // [["L0","Physical Compute"],...]
   curated,
   pending: []

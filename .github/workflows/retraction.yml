@@ -112,17 +112,24 @@ jobs:
       - name: Tally retraction votes
         id: tally
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
-        env:
-          QUORUM: '3'
         with:
           script: |
             const fs = require('fs');
+            // Roster eligibility: only committee members in committee-config.json
+            // count toward the tally and toward quorum. Helpers are unit tested in
+            // test/vote-roster.test.js.
+            const guards = require('./lib/workflow-guards.js');
             let quorum;
+            let roster;
             try {
               const config = JSON.parse(fs.readFileSync('data/committee-config.json', 'utf8'));
-              quorum = Math.floor(config.members.length / 2) + 1;
+              roster = guards.rosterLogins(config);
+              if (roster.size === 0) throw new Error('no members listed');
+              quorum = Math.floor(roster.size / 2) + 1;
             } catch (e) {
-              quorum = parseInt(process.env.QUORUM);
+              // Fail closed: without a roster no vote can be counted.
+              core.setFailed(`Cannot read the voting roster from data/committee-config.json: ${e.message}`);
+              return;
             }
 
             // SEC-003: Verify commenter is an org member/collaborator
@@ -202,25 +209,16 @@ jobs:
               // Still tally other votes below, but this voter's vote is excluded
             }
 
-            // Count unique retraction and no-retract votes (excluding submitter)
-            const retractVoters = new Set();
-            const keepVoters = new Set();
-            for (const c of comments) {
-              if (c.user.type === 'Bot') continue;
-              if (c.user.login === submitter) continue;  // P0-2: Submitter exclusion
-              const body = c.body.trim();
-              if (body === '/vote retract') {
-                retractVoters.add(c.user.login);
-                keepVoters.delete(c.user.login);
-              }
-              if (body === '/vote no-retract') {
-                keepVoters.add(c.user.login);
-                retractVoters.delete(c.user.login);
-              }
-            }
+            // Count retract and no-retract votes: roster members only, submitter
+            // excluded (P0-2), one per member, last vote wins.
+            const { votes, ignoredNonRoster } =
+              guards.filterRosterVotes(comments, roster, submitter, guards.parseRetractionVote);
+            const ignoredNote = ignoredNonRoster > 0
+              ? `\n\n*${ignoredNonRoster} non-roster vote(s) ignored. Only committee members listed in data/committee-config.json are counted.*`
+              : '';
 
-            const retractCount = retractVoters.size;
-            const keepCount = keepVoters.size;
+            const retractCount = Object.values(votes).filter(v => v === 'retract').length;
+            const keepCount = Object.values(votes).filter(v => v === 'no-retract').length;
             const totalVotes = retractCount + keepCount;
 
             // SEC-008: Rate limit - skip if bot posted a tally within last 5 minutes
@@ -238,7 +236,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: `**Retraction Vote Tally** -- ${totalVotes}/${quorum} votes (quorum not yet reached)\n\n| | Count |\n|---|---|\n| Retract | ${retractCount} |\n| Keep | ${keepCount} |\n\n*Note: The project submitter (@${submitter}) is excluded from this vote.*`
+                body: `**Retraction Vote Tally** -- ${totalVotes}/${quorum} votes (quorum not yet reached)\n\n| | Count |\n|---|---|\n| Retract | ${retractCount} |\n| Keep | ${keepCount} |\n\n*Note: The project submitter (@${submitter}) is excluded from this vote.*${ignoredNote}`
               });
               return;
             }

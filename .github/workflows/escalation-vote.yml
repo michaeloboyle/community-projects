@@ -23,17 +23,24 @@ jobs:
 
       - name: Tally escalation votes
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
-        env:
-          QUORUM: '3'
         with:
           script: |
             const fs = require('fs');
+            // Roster eligibility: only committee members in committee-config.json
+            // count toward the tally and toward quorum. Helpers are unit tested in
+            // test/vote-roster.test.js.
+            const guards = require('./lib/workflow-guards.js');
             let quorum;
+            let roster;
             try {
               const config = JSON.parse(fs.readFileSync('data/committee-config.json', 'utf8'));
-              quorum = Math.floor(config.members.length / 2) + 1;
+              roster = guards.rosterLogins(config);
+              if (roster.size === 0) throw new Error('no members listed');
+              quorum = Math.floor(roster.size / 2) + 1;
             } catch (e) {
-              quorum = parseInt(process.env.QUORUM);
+              // Fail closed: without a roster no vote can be counted.
+              core.setFailed(`Cannot read the voting roster from data/committee-config.json: ${e.message}`);
+              return;
             }
 
             // SEC-003: Verify commenter is an org member/collaborator
@@ -92,20 +99,13 @@ jobs:
             });
             const submitter = issue.data.user.login;
 
-            // Tally votes (one per unique user, last vote wins)
-            const votes = {};
-            for (const c of comments) {
-              if (c.user.type === 'Bot') continue;
-              if (c.user.login === submitter) continue;  // SEC-012
-              const voterId = c.user.login;
-              const body = c.body.trim();
-              if (/^\/vote escalate\s*$/.test(body)) {
-                votes[voterId] = 'escalate';
-              }
-              if (/^\/vote no-escalate\s*$/.test(body)) {
-                votes[voterId] = 'no-escalate';
-              }
-            }
+            // Tally votes: roster members only, submitter excluded (SEC-012),
+            // one per member, last vote wins.
+            const { votes, ignoredNonRoster } =
+              guards.filterRosterVotes(comments, roster, submitter, guards.parseEscalationVote);
+            const ignoredNote = ignoredNonRoster > 0
+              ? `\n\n*${ignoredNonRoster} non-roster vote(s) ignored. Only committee members listed in data/committee-config.json are counted.*`
+              : '';
 
             const escalate = Object.values(votes).filter(v => v === 'escalate').length;
             const noEscalate = Object.values(votes).filter(v => v === 'no-escalate').length;
@@ -137,7 +137,7 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                body: `**Escalation Vote Tally** -- ${totalVotes}/${quorum} votes cast (quorum not yet reached)\n\n| | Count |\n|---|---|\n| Escalate | ${escalate} |\n| No Escalate | ${noEscalate} |`
+                body: `**Escalation Vote Tally** -- ${totalVotes}/${quorum} votes cast (quorum not yet reached)\n\n| | Count |\n|---|---|\n| Escalate | ${escalate} |\n| No Escalate | ${noEscalate} |${ignoredNote}`
               });
               return;
             }
